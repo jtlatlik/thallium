@@ -1,5 +1,6 @@
 import tornadofx.App
 import view.EditorWindow
+import view.StackupEditorView
 
-class Application : App(EditorWindow::class) {
+class Application : App(StackupEditorView::class) {
 }

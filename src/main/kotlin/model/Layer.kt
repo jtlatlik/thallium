@@ -1,14 +1,12 @@
 package model
 
-import javafx.beans.property.ObjectProperty
-import javafx.beans.property.SimpleDoubleProperty
-import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.property.SimpleStringProperty
+import javafx.beans.property.*
+import javafx.scene.paint.Color
 import javafx.util.StringConverter
 import tornadofx.*
 import java.util.*
 
-class Layer(name: String, type: LayerType, thickness: Double = 35.0) {
+class Layer(name: String, type: LayerType, thickness: Double = 35.0, color: Color) {
 
     val id = UUID.randomUUID()
 
@@ -16,10 +14,16 @@ class Layer(name: String, type: LayerType, thickness: Double = 35.0) {
     var name by nameProperty
 
     val typeProperty = SimpleObjectProperty<LayerType>(type)
-    val type by typeProperty
+    var type by typeProperty
 
     val thicknessProperty = SimpleDoubleProperty(thickness)
-    val thickness by typeProperty
+    var thickness by thicknessProperty
+
+    val colorProperty = SimpleObjectProperty<Color>(color)
+    var color by colorProperty
+
+    val allowComponentPlacementProperty = SimpleBooleanProperty(false)
+    var allowComponentPlacement by allowComponentPlacementProperty
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -43,7 +47,15 @@ class LayerViewModel(property: ObjectProperty<Layer>) : ItemViewModel<Layer>(ite
     val type = bind(autocommit = true) { item?.typeProperty}
 }
 
-enum class LayerType {
-    Signal, Prepreg, Core, SolderMask, Plane
+enum class LayerType(val text: String) {
+    SIGNAL("Signal"),
+    DIELECTRIC("Dielectric"),
+    SOLDER_MASK("Solder Mask"),
+    PASTE_MASK("Paste Mask"),
+    PLANE("Internal Plane"),
+    SILK("Silk Screen");
 
+    override fun toString(): String {
+        return text
+    }
 }

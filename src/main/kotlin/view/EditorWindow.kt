@@ -23,7 +23,7 @@ class EditorWindow: View("Thallium" ) {
             menu("Edit")
             menu("Help")
         }
-        left = leftView.root
+        center = leftView.root
         //center = pcbView
 
     }
