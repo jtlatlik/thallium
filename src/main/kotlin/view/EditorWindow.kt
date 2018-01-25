@@ -1,16 +1,13 @@
-package hello
+package view
 
-import javafx.scene.control.Button
-import javafx.scene.control.Label
-import javafx.scene.input.KeyCodeCombination
-import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
 import tornadofx.*
-import view.StackupEditorView
+import LayerView
+import model.PCB
 
-class MyApp: App(StackupEditorView::class)
+class EditorWindow: View("Thallium" ) {
 
-class MyView: View() {
+    val leftView: StackupEditorView by inject()
+
     override val root = borderpane {
         top = menubar {
             menu("File") {
@@ -26,5 +23,8 @@ class MyView: View() {
             menu("Edit")
             menu("Help")
         }
+        left = leftView.root
+        //center = pcbView
+
     }
 }

@@ -1,39 +1,37 @@
 package view
 
+import controller.Stackup
 import javafx.collections.FXCollections
-import javafx.scene.control.Button
+import javafx.util.StringConverter
 import model.Layer
-import model.LayerMaterial
-import model.PhysicalLayer
+import model.LayerType
 import tornadofx.*
-import java.awt.Color
 
-private val materials =  FXCollections.observableArrayList<String>( LayerMaterial.values().map { it.toString() })
+class StackupEditorView : View("Stackup Editor") {
+    val stackup: Stackup by inject()
+    val layertypes = FXCollections.observableArrayList("A", "B")
 
-private val defaultStackup = listOf<PhysicalLayer>(
-        PhysicalLayer("Top Solder Mask", LayerMaterial.SOLDER_MASK, 10, color = Color.GREEN),
-        PhysicalLayer("Top Layer", LayerMaterial.COPPER, 35, color = Color.RED),
-        PhysicalLayer("Core", LayerMaterial.CORE, 1500, color = Color.GRAY),
-        PhysicalLayer("Bottom Layer", LayerMaterial.COPPER, 35, color = Color.BLUE) ,
-        PhysicalLayer("Bottom Solder Mask", LayerMaterial.SOLDER_MASK, 10,Color.GREEN)
-).observable()
 
-class StackupEditorView: View("Stackup Editor") {
-    override val root = borderpane {
-        center = tableview(defaultStackup) {
-            column("Color", PhysicalLayer::color).cellFormat {
-                style { backgroundColor += c(it.red, it.green, it.blue) }
-            }
-            column("Name", PhysicalLayer::name)
-            column("Material", PhysicalLayer::material).cellFormat {
+    override val root = tableview(stackup.layers) {
 
-                graphic = cache {
-                    combobox(values = materials)
+        isEditable = true
 
-                }
-            }
-            column("Thickness (µm)", PhysicalLayer::thickness)
-            columnResizePolicy = SmartResize.POLICY
+        column("Layer Name", Layer::nameProperty).makeEditable()
+        column("Type", Layer::typeProperty).useTextField(LayerTypeConverter())
+        column("Thickness (µm)", Layer::thicknessProperty).makeEditable()
+    }
+}
+
+class LayerTypeConverter : StringConverter<LayerType>() {
+    override fun fromString(string: String?): LayerType {
+        if(string == null) {
+            return LayerType.Signal
+        } else {
+            return LayerType.valueOf(string)
         }
+    }
+
+    override fun toString(`object`: LayerType?): String {
+        return `object`.toString()
     }
 }
