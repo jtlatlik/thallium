@@ -24,6 +24,7 @@ class EditorWindow: View("Thallium" ) {
             menu("Help")
         }
         center = leftView.root
+        mnemonicTarget()
         //center = pcbView
 
     }

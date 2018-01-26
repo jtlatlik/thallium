@@ -1,12 +1,20 @@
 package view
 
+import com.sun.javafx.embed.AbstractEvents
 import controller.Stackup
 import javafx.collections.FXCollections
+import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.control.MultipleSelectionModel
 import javafx.scene.control.SelectionMode
+import javafx.scene.control.TableRow
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyCombination
+import javafx.scene.input.KeyEvent
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
+import javafx.scene.text.TextAlignment
 import model.Layer
 import model.LayerType
 import tornadofx.*
@@ -23,7 +31,7 @@ class StackupEditorView : View("Stackup Editor") {
         isEditable = true
         columnResizePolicy = SmartResize.POLICY
         selectionModel.selectionMode = SelectionMode.MULTIPLE
-
+        rowFactory = RowFactoryCallback()
 
         column("Color", Layer::colorProperty)
                 .fixedWidth(50.0)
@@ -45,15 +53,35 @@ class StackupEditorView : View("Stackup Editor") {
                 .useCheckbox()
                 .weightedWidth(0.2)
 
+        columns.forEach{
+            it.isSortable = false
+        }
+
         onEditCommit {
             totalThickness.invalidate()
             signalLayerCount.invalidate()
         }
 
-        onUserDelete {
-            stackup.removeLayer(it)
-            println("USER DELETE")
-        }
+        addEventFilter(KeyEvent.KEY_PRESSED, { event ->
+            if (event.code == KeyCode.DELETE && selectionModel.selectedIndex != -1) {
+                val index = selectionModel.selectedIndex
+                stackup.removeLayers(selectionModel.selectedItems.asIterable())
+                selectionModel.clearAndSelect(index)
+
+            }
+
+            if(event.isAltDown && event.code == KeyCode.UP  && selectionModel.selectedIndex != -1) {
+                val index = selectionModel.selectedIndex
+                stackup.moveLayerUp(selectionModel.selectedItem)
+                selectionModel.clearAndSelect(index - 1)
+            }
+
+            if(event.isAltDown && event.code == KeyCode.DOWN && selectionModel.selectedIndex != -1) {
+                val index = selectionModel.selectedIndex
+                stackup.moveLayerDown(selectionModel.selectedItem)
+                selectionModel.clearAndSelect(index + 1)
+            }
+        })
 
     }
 
@@ -66,35 +94,38 @@ class StackupEditorView : View("Stackup Editor") {
             }
             padding = Insets(10.0)
 
-            button("Move Layer Up") {
-                action {
-                    val target = table.selectionModel.selectedItem
-                    stackup.moveLayerUp(target)
-                    table.selectionModel.clearSelection()
-                    table.selectionModel.select(target)
-                    table.requestFocus()
-                }
-            }
-            button("Move Layer Down") {
-                action {
-                    val target = table.selectionModel.selectedItem
-                    stackup.moveLayerDown(target)
-                    table.selectionModel.clearSelection()
-                    table.selectionModel.select(target)
-                    table.requestFocus()
-                }
-            }
-
             button("Delete Selected") {
                 action {
                     stackup.removeLayers(table.selectionModel.selectedItems.asIterable())
                 }
 
             }
-            menubutton("Add Layer") {
+            menubutton("_Add Layer") {
+
+                val mnemonicMap = hashMapOf(
+                        LayerType.SIGNAL to Pair("_Signal", "S"),
+                        LayerType.DIELECTRIC to Pair("_Dielectric", "D"),
+                        LayerType.SILK to Pair("S_ilk Screen", "I"),
+                        LayerType.PLANE to Pair("_Plane", "P"),
+                        LayerType.PASTE_MASK to Pair("Paste _Mask", "M"),
+                        LayerType.SOLDER_MASK to Pair("So_lder Mask", "L")
+                )
+
                 LayerType.values().forEach {
-                    item(it.toString()) { action { stackup.addLayer(it, 35.0) } }
+                    item(mnemonicMap[it]!!.first) {
+                        action {
+                            val index = table.selectionModel.selectedIndex
+                            if (index > -1) {
+                                stackup.insertLayer(index, it, 35.0)
+                            } else {
+                                stackup.addLayer(it, 35.0)
+                            }
+                            table.requestFocus()
+                        }
+                        accelerator = KeyCombination.valueOf("Ctrl+" + mnemonicMap[it]!!.second)
+                    }
                 }
+
             }
 
         }
@@ -116,8 +147,7 @@ class StackupEditorView : View("Stackup Editor") {
                 button("OK") {
                     action {
                         for (layer in stackup.layers) {
-                            println(layer.thickness)
-
+                            println(layer.name)
                         }
                     }
                 }
