@@ -6,7 +6,7 @@ import javafx.util.StringConverter
 import tornadofx.*
 import java.util.*
 
-class Layer(name: String, type: LayerType, thickness: Double = 35.0, color: Color) {
+class Layer(name: String, type: LayerType, thickness: Double = 35.0, color: Color = Color.BLACK) {
 
     val id = UUID.randomUUID()
 

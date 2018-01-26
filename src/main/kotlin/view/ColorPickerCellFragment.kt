@@ -1,6 +1,6 @@
 package view
 
-import javafx.beans.binding.BooleanExpression
+import javafx.beans.binding.BooleanBinding
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.scene.paint.Color
 import model.Layer
@@ -22,6 +22,14 @@ class ColorPickerCellFragment : TableCellFragment<Layer, Color>() {
                 show()
             }
 
+            removeWhen {
+                rowItemProperty.booleanBinding() {
+                    if (it == null)
+                        false
+                    else
+                        it.type == LayerType.DIELECTRIC
+                }
+            }
 
         }
     }
