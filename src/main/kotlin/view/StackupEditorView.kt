@@ -1,20 +1,18 @@
 package view
 
-import com.sun.javafx.embed.AbstractEvents
 import controller.Stackup
+import javafx.beans.binding.DoubleBinding
+import javafx.beans.binding.IntegerBinding
 import javafx.collections.FXCollections
-import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.geometry.Pos
-import javafx.scene.control.MultipleSelectionModel
 import javafx.scene.control.SelectionMode
-import javafx.scene.control.TableRow
+import javafx.scene.control.TableView
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
-import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Priority
-import javafx.scene.text.TextAlignment
+import javafx.scene.paint.Color
 import model.Layer
 import model.LayerType
 import tornadofx.*
@@ -22,16 +20,15 @@ import tornadofx.*
 class StackupEditorView : View("Stackup Editor") {
     val stackup: Stackup by inject()
     val layertypes = FXCollections.observableArrayList(LayerType.values().asList())
-    val totalThickness = doubleBinding(stackup.layers) { sumByDouble { it.thickness } }
-    val layerCount = integerBinding(stackup.layers) { count() }
-    val signalLayerCount = integerBinding(stackup.layers) { count { it.type == LayerType.SIGNAL } }
 
-    val table = tableview(stackup.layers) {
+    val table: TableView<Layer> = tableview(stackup.layers) {
 
         isEditable = true
         columnResizePolicy = SmartResize.POLICY
         selectionModel.selectionMode = SelectionMode.MULTIPLE
         rowFactory = RowFactoryCallback()
+        regainFocusAfterEdit()
+        //selectionModel.isCellSelectionEnabled = true
 
         column("Color", Layer::colorProperty)
                 .fixedWidth(50.0)
@@ -43,7 +40,7 @@ class StackupEditorView : View("Stackup Editor") {
 
         column("Type", Layer::typeProperty)
                 .useComboBox(layertypes)
-                .weightedWidth(0.3, minContentWidth = true, padding = 20.0)
+                .weightedWidth(0.3, minContentWidth = true, padding = 10.0)
 
         column("Thickness (µm)", Layer::thicknessProperty)
                 .makeEditable()
@@ -84,6 +81,10 @@ class StackupEditorView : View("Stackup Editor") {
         })
 
     }
+
+    val totalThickness: DoubleBinding = doubleBinding(table.items) { sumByDouble { it.thickness } }
+    val layerCount: IntegerBinding = integerBinding(table.items) { count() }
+    val signalLayerCount: IntegerBinding = integerBinding(table.items) { count { it.type == LayerType.SIGNAL } }
 
     override val root = borderpane {
 
@@ -146,15 +147,13 @@ class StackupEditorView : View("Stackup Editor") {
 
                 button("OK") {
                     action {
-                        for (layer in stackup.layers) {
-                            println(layer.name)
-                        }
+                        close()
                     }
                 }
                 button("Cancel") {
                     isCancelButton = true
                     action {
-
+                        TODO("implement me")
                     }
                 }
                 button("Apply") {

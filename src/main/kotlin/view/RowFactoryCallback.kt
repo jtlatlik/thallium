@@ -42,17 +42,7 @@ class RowFactoryCallback : Callback<TableView<Layer>, TableRow<Layer>> {
                     it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
                     it.consume()
 
-                    row.style {
-                        borderColor += box(top = Color.DARKGRAY, left = Color.TRANSPARENT, bottom = Color.TRANSPARENT, right=Color.TRANSPARENT)
-
-                    }
                 }
-            }
-        }
-
-        row.onDragExited = EventHandler {
-            row.style {
-                borderColor += box(Color.TRANSPARENT)
             }
         }
 

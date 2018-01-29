@@ -1,7 +1,6 @@
 package view
 
-import javafx.beans.binding.BooleanBinding
-import javafx.beans.property.SimpleBooleanProperty
+import javafx.event.EventType
 import javafx.scene.paint.Color
 import model.Layer
 import model.LayerType
@@ -11,8 +10,10 @@ class ColorPickerCellFragment : TableCellFragment<Layer, Color>() {
 
     override val root = vbox {
 
+
         colorpicker(item) {
-            bind(itemProperty)
+            this.valueProperty().bindBidirectional(rowItemProperty.select { it.colorProperty })
+
             style {
                 backgroundColor += Color.TRANSPARENT
                 colorLabelVisible = false
@@ -20,17 +21,13 @@ class ColorPickerCellFragment : TableCellFragment<Layer, Color>() {
 
             onEdit {
                 show()
+
             }
 
-            removeWhen {
-                rowItemProperty.booleanBinding() {
-                    if (it == null)
-                        false
-                    else
-                        it.type == LayerType.DIELECTRIC
-                }
-            }
 
+
+            visibleProperty().bind(rowItemProperty.select { it.typeProperty.isNotEqualTo(LayerType.DIELECTRIC) })
+            enableWhen { visibleProperty() }
         }
     }
 }

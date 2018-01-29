@@ -1,10 +1,11 @@
+import controller.EditorController
 import javafx.stage.Stage
 import tornadofx.App
 import tornadofx.UIComponent
 import view.EditorWindow
 import view.StackupEditorView
 
-class Application : App(StackupEditorView::class) {
+class Application : App(EditorWindow::class) {
 
 
     override fun start(stage: Stage) {
@@ -13,6 +14,7 @@ class Application : App(StackupEditorView::class) {
         stage.width = 800.0
         stage.height = 600.0
         stage.centerOnScreen()
+        EditorController()
 
     }
 }

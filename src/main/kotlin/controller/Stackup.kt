@@ -4,6 +4,7 @@ import javafx.scene.paint.Color
 import model.Layer
 import model.LayerType
 import tornadofx.*
+import java.io.File
 import java.util.*
 
 class Stackup : Controller() {
@@ -17,12 +18,12 @@ class Stackup : Controller() {
     fun insertLayer(index: Int, type: LayerType, thickness: Double) {
         val name = type.toString() + " Layer"
         val rnd = Random()
-        val color = Color.rgb(rnd.nextInt(256),rnd.nextInt(256),rnd.nextInt(256))
+        val color = Color.rgb(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
 
         insertLayer(index, name, type, thickness, color)
     }
 
-    fun addLayer(name: String, type: LayerType, thickness: Double, color: Color = Color.BLACK) : Layer {
+    fun addLayer(name: String, type: LayerType, thickness: Double, color: Color = Color.BLACK): Layer {
         val layer = Layer(name, type, thickness, color)
         layers.add(layer)
         return layer
@@ -31,7 +32,7 @@ class Stackup : Controller() {
     fun addLayer(type: LayerType, thickness: Double) {
         val name = type.toString() + " Layer"
         val rnd = Random()
-        val color = Color.rgb(rnd.nextInt(256),rnd.nextInt(256),rnd.nextInt(256))
+        val color = Color.rgb(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
         addLayer(name, type, thickness, color)
     }
 
@@ -42,19 +43,23 @@ class Stackup : Controller() {
     fun moveLayerDown(layer: Layer) = layers.items.moveDown(layer)
     fun moveLayerUp(layer: Layer) = layers.items.moveUp(layer)
 
+    fun saveToFile(file: File) {
+
+        val json = JsonBuilder()
+        json.add("stackup", layers.toJSON())
+        file.createNewFile()
+        file.writeText(json.build().toString())
+    }
+
+    fun loadFromFile(file: File) {
+        val text = file.readText()
+        TODO("Implement me")
+    }
+
     init {
-        addLayer("Top Silk", LayerType.SILK, 15.0, Color.YELLOW)
-        addLayer("Top Solder Mask", LayerType.SOLDER_MASK, 15.0, Color.DARKMAGENTA)
-        addLayer("Top Layer", LayerType.SIGNAL, 35.0, Color.RED).allowComponentPlacement = true
-        addLayer("Prepreg", LayerType.DIELECTRIC, 360.0)
-        addLayer("Internal Layer 1", LayerType.SIGNAL, 18.0, Color.ORANGE)
-        addLayer("Core", LayerType.DIELECTRIC, 700.0)
-        addLayer("Internal Layer 2", LayerType.SIGNAL, 18.0, Color.LIGHTBLUE)
-        addLayer("Prepreg", LayerType.DIELECTRIC, 360.0)
-        addLayer("Bottom Layer", LayerType.SIGNAL, 35.0, Color.BLUE).allowComponentPlacement = true
-        addLayer("Bottom Solder Mask", LayerType.SOLDER_MASK, 15.0, Color.DARKBLUE)
-        addLayer("Bottom Silk", LayerType.SILK, 15.0, Color.GREEN)
+
 
     }
+
 
 }
