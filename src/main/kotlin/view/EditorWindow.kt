@@ -11,7 +11,7 @@ class EditorWindow : View("Thallium") {
 
 
 
-    val layerview = LayerView()
+    val editor = PCBEditor()
 
 
 
@@ -30,38 +30,16 @@ class EditorWindow : View("Thallium") {
                 item("_Stackup", "Ctrl+L") {
                     action {
                         find(StackupEditorView::class).openModal(stageStyle = StageStyle.UTILITY, block = true)
-                        layerview.redraw()
+                        editor.refresh()
                     }
                 }
             }
             menu("Help")
         }
 
-        center = stackpane {
+        center = editor
 
-            add(layerview)
-            layerview.widthProperty().bind(this.widthProperty())
-            layerview.heightProperty().bind(this.heightProperty())
 
-        }
-
-        layerview.onMouseClicked = EventHandler {
-
-            //to place correctly, the currently applied affine transformation has to be inverted
-            val targetX = (it.x - layerview.panX) / layerview.zoomFactor
-            val targetY = (it.y - layerview.panY) / layerview.zoomFactor
-
-            layerview.layer!!.primitives.add(Via(Point(targetX, targetY), 10.0, 4.0))
-            layerview.redraw()
-        }
-
-        layerview.onScroll = EventHandler {
-            if (it.isControlDown) {
-                layerview.zoomView(if(it.deltaY < 0) 0.8 else 1.2, it.x, it.y)
-            } else {
-                layerview.panView(it.deltaX, it.deltaY)
-            }
-        }
 
     }
 }

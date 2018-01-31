@@ -47,8 +47,8 @@ class EditorController : Controller() {
             topLayer.primitives.add(Via(Point(50.0,50.0), diameter = 16.5, holeSize = 6.0))
             topLayer.primitives.add(Via(Point(50.0,70.0), diameter = 16.5, holeSize = 6.0))
 
-            editorWindow.layerview.layer = topLayer
-            editorWindow.layerview.redraw()
+            editorWindow.editor.setPCB(topLayer)
+
         }
     }
 }
