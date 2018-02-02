@@ -38,16 +38,16 @@ class EditorController : Controller() {
             topLayer.allowComponentPlacement = true
             bottomLayer.allowComponentPlacement = true
 
-            val w = 0.9*3.0
-
-            topLayer.primitives.add(Line(Point(50.0, 50.0), Point(57.0, 57.0), w))
-            topLayer.primitives.add(Line(Point(50.0, 70.0), Point(57.0, 63.0), w))
-            topLayer.primitives.add(Line(Point(57.0, 57.0), Point(200.0, 57.0), w))
-            topLayer.primitives.add(Line(Point(57.0, 63.0), Point(200.0, 63.0), w))
-            topLayer.primitives.add(Via(Point(50.0,50.0), diameter = 16.5, holeSize = 6.0))
-            topLayer.primitives.add(Via(Point(50.0,70.0), diameter = 16.5, holeSize = 6.0))
+            val w = 0.15
+            topLayer.primitives.add(Line(Point(10.0, 10.0), Point(10.5, 10.5), w))
+            topLayer.primitives.add(Line(Point(10.0, 12.0), Point(10.5, 11.5), w))
+            topLayer.primitives.add(Line(Point(10.5, 10.5), Point(20.0, 10.5), w))
+            topLayer.primitives.add(Line(Point(10.5, 11.5), Point(20.0, 11.5), w))
+            topLayer.primitives.add(Via(Point(10.0,10.0), radius = 0.55/2, holeRadius = 0.1))
+            topLayer.primitives.add(Via(Point(10.0,12.0), radius = 0.55/2, holeRadius = 0.1))
 
             editorWindow.editor.setPCB(topLayer)
+            editorWindow.editor.fitView()
 
         }
     }

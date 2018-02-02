@@ -1,19 +1,14 @@
 package view
 
-import javafx.event.EventHandler
+import javafx.scene.input.KeyCombination
 import javafx.stage.StageStyle
-import model.Via
-import model.geom.Point
 import tornadofx.*
-import view.layer.LayerView
+import view.editor.PCBEditor
 
 class EditorWindow : View("Thallium") {
 
 
-
     val editor = PCBEditor()
-
-
 
 
     override val root = borderpane {
@@ -34,12 +29,18 @@ class EditorWindow : View("Thallium") {
                     }
                 }
             }
+            menu("_View") {
+                item("_Fit", "Ctrl+F") {
+                    action {
+                        editor.fitView()
+                    }
+                }
+            }
             menu("Help")
         }
 
         center = editor
-
-
+        editor.fitView()
 
     }
 }

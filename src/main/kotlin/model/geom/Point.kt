@@ -1,13 +1,10 @@
 package model.geom
 
 data class Point(var x: Double, var y: Double) {
-
-        fun transform(scale: Double, translation: Point): Point {
-            return this*scale + translation
-        }
-
-        fun inverseTransform(scale: Double, translation: Point) : Point {
-            return (this - translation)/scale
+    
+        fun distTo(b: Point): Double {
+            val d = b - this
+            return Math.sqrt(d.x*d.x + d.y*d.y)
         }
 }
 
