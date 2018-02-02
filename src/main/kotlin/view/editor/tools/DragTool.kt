@@ -7,7 +7,6 @@ import view.editor.PCBEditor
 
 class DragTool(editor: PCBEditor, val selection: MutableSet<Primitive>):  Tool(editor) {
 
-
     override val onMouseDragged = EventHandler<MouseEvent> {
         println("passing over to me. $selection")
     }
