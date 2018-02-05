@@ -6,14 +6,17 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.StrokeLineCap
 import javafx.scene.shape.StrokeLineJoin
 import javafx.scene.text.TextAlignment
-import model.primitives.Line
-import model.primitives.Pad
-import model.primitives.PrimitiveVisitor
-import model.primitives.Via
 import model.geom.Point
+import model.primitives.*
 
 class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
 
+    fun drawBoundingRectangle(p: Primitive) {
+        gc.stroke = Color.WHITE
+        p.getBoundingRect().let {
+            gc.strokeRect(it.p1.x, it.p1.y, it.width, it.height)
+        }
+    }
 
     fun contrastColor(color: Color) : Color
     {
@@ -72,6 +75,12 @@ class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
 //            gc.strokeText(via.net, via.center.x, via.center.y)
 //        }
         gc.restore()
+    }
+
+    override fun visitPolygon(poly: Polygon) {
+        val xPoints = poly.points.map { it.x }.toDoubleArray()
+        val yPoints = poly.points.map { it.y }.toDoubleArray()
+        gc.fillPolygon(xPoints, yPoints, xPoints.size)
     }
 
 }

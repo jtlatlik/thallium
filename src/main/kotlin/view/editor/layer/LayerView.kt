@@ -3,13 +3,11 @@ package view.editor.layer
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import javafx.scene.shape.ArcType
-import model.Layer
 import model.LayerType
 import model.geom.*
 import view.editor.PCBEditor
 import java.util.*
 import kotlin.system.measureNanoTime
-import kotlin.system.measureTimeMillis
 
 class LayerView(val editor: PCBEditor) : Canvas() {
 
@@ -34,12 +32,18 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             gc.fill = Color.gray(0.2)
             gc.fillRect(0.0, 0.0, width, height)
 
+            //apply viewport transformation
             val scale = editor.viewport.getScale()
             val pan = editor.viewport.getPan()
             gc.setTransform(scale.x, 0.0, 0.0, scale.y, pan.x, pan.y)
 
-            editor.pcb?.grids?.forEach {
-                drawGrid(it)
+            editor.pcb?.let { pcb ->
+
+                //draw grids
+                pcb.grids.forEach { drawGrid(it) }
+
+                //draw origin marker
+                drawOrigin(pcb.origin)
             }
 
 
@@ -47,12 +51,14 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             val p2 = editor.viewport.inverseTransform(Point(width, height))
             val viewBounds = Rectangle(p1, p2)
 
-            editor.pcb?.stackup?.filter { it.type != LayerType.DIELECTRIC }?.forEach {
-                gc.stroke = it.color
-                gc.fill = it.color
+            editor.pcb?.stackup?.filter { it.type != LayerType.DIELECTRIC }?.forEach { layer ->
 
-                it.primitives.retrieve(viewBounds).forEach {
+                layer.primitives.retrieve(viewBounds).forEach {
+                    gc.stroke = layer.color
+                    gc.fill = layer.color
                     it.accept(painter)
+                    gc.lineWidth = 1.0 / editor.viewport.getScale().x
+                    painter.drawBoundingRectangle(it)
                     ++drawn
                 }
             }
@@ -63,14 +69,36 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             ++drawn
         }
 
-        println("layerview redraw. primitives: $drawn. time: ${time.toDouble()/1000} µs")
+        println("layerview redraw. primitives: $drawn. time: ${time.toDouble() / 1000} µs")
 
     }
+
 
     override fun isResizable(): Boolean = true
 
     override fun prefWidth(height: Double): Double = width
     override fun prefHeight(width: Double): Double = height
+
+    /**
+     * Draws the origin marker at the Point given by [origin]
+     *
+     * @param a point denoting the origin of the PCB
+     */
+    private fun drawOrigin(origin: Point) {
+        gc.stroke = Color.WHITE
+        gc.fill = Color.WHITE
+
+        val scale = editor.viewport.getScale().x
+        gc.lineWidth = 3 / scale
+        val offset = 0.25
+
+        gc.strokeLine(origin.x, origin.y, origin.x + offset, origin.y)
+        gc.strokeLine(origin.x, origin.y, origin.x, origin.y + offset)
+        gc.fillPolygon(doubleArrayOf(origin.x - offset/8, origin.x + offset/8, origin.x),
+                doubleArrayOf(origin.y + offset, origin.y + offset, origin.y + offset*1.25),3)
+        gc.fillPolygon(doubleArrayOf(origin.x + offset, origin.x + offset, origin.x + offset*1.25),
+                doubleArrayOf(origin.y - offset/8, origin.y + offset/8, origin.y),3)
+    }
 
     private fun drawGrid(grid: Grid) {
 

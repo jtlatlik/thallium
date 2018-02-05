@@ -2,11 +2,8 @@ package view.editor.layer;
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
-import model.primitives.Line
-import model.primitives.Pad
-import model.primitives.PrimitiveVisitor
-import model.primitives.Via
 import model.geom.Point
+import model.primitives.*
 
 class SelectionPainter(val gc: GraphicsContext) : PrimitiveVisitor {
 
@@ -22,6 +19,10 @@ class SelectionPainter(val gc: GraphicsContext) : PrimitiveVisitor {
         gc.strokeLine(line.start.x, line.start.y, line.end.x, line.end.y)
         gc.restore()
 
+    }
+
+    override fun visitPolygon(poly: Polygon) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun visitPad(pad: Pad) {

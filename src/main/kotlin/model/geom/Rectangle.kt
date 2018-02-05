@@ -5,8 +5,15 @@ data class Rectangle(var p1: Point, var p2: Point) {
     constructor(p1: Point, width: Double, height: Double) : this(p1, p1 + Point(width, height))
     constructor(x: Double, y: Double, width: Double, height: Double) : this(Point(x, y), Point(x, y) + Point(width, height))
 
+    val width: Double
+        get() = p2.x - p1.x
+
+    val height: Double
+        get() = p2.y - p1.y
+
+
     fun getSize(): Point {
-        return Point(p2.x - p1.x, p2.y - p1.y)
+        return Point(width, height)
     }
 
     fun copy() = Rectangle(p1.copy(), p2.copy())
@@ -32,6 +39,10 @@ data class Rectangle(var p1: Point, var p2: Point) {
 
     fun contains(rect: Rectangle): Boolean {
         return p1.x <= rect.p1.x && p1.y <= rect.p1.y && p2.x >= rect.p2.x && p2.y >= rect.p2.y
+    }
+
+    fun contains(p: Point): Boolean {
+        return p1.x <= p.x && p1.y <= p.y && p2.x >= p.x && p2.y >= p.y
     }
 
     override fun toString(): String {

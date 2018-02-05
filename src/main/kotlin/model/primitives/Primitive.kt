@@ -3,8 +3,9 @@ package model.primitives
 import model.geom.Bounded
 import model.geom.Point
 import model.geom.Rectangle
+import model.nets.Net
 
-abstract class Primitive : Bounded {
+abstract class Primitive(var net: Net? = null) : Bounded {
 
     abstract var center: Point
 

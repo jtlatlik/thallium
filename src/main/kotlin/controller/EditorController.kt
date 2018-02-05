@@ -1,12 +1,9 @@
 package controller
 
 import javafx.beans.property.SimpleBooleanProperty
-import javafx.scene.paint.Color
-import model.LayerType
-import model.primitives.Line
 import model.PCB
-import model.primitives.Via
 import model.geom.Point
+import model.primitives.Polygon
 import tornadofx.Controller
 import tornadofx.getValue
 import tornadofx.setValue
@@ -56,6 +53,9 @@ class EditorController : Controller() {
 //
 //            //bottomLayer.primitives.add(Line(Point(2.0, 2.0), Point(30.0, 20.0), w))
 //        }
+
+        val points = listOf(Point(1.0, 1.0), Point(2.0, 0.0), Point(2.0, 2.0), Point(1.0, 2.0))
+        pcb.stackup[0].primitives.add(Polygon(points))
 
         editorWindow.editor.setPCB(pcb)
         editorWindow.editor.fitView()

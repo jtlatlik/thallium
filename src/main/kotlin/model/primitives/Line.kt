@@ -22,7 +22,7 @@ data class Line(var start: Point, var end: Point, var width: Double) : Primitive
     override fun isPointInside(point: Point): Boolean {
         //val halfWidth = width / 2
 
-        return false
+        return getBoundingRect().contains(point)
     }
 
     override fun isContained(rectangle: Rectangle, touching: Boolean): Boolean {
