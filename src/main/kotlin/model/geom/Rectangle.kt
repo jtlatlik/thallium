@@ -2,6 +2,9 @@ package model.geom
 
 data class Rectangle(var p1: Point, var p2: Point) {
 
+    constructor(p1: Point, width: Double, height: Double) : this(p1, p1 + Point(width, height))
+    constructor(x: Double, y: Double, width: Double, height: Double) : this(Point(x, y), Point(x, y) + Point(width, height))
+
     fun getSize(): Point {
         return Point(p2.x - p1.x, p2.y - p1.y)
     }
@@ -20,5 +23,18 @@ data class Rectangle(var p1: Point, var p2: Point) {
             canonicalRect.p2.y = p1.y
         }
         return canonicalRect
+    }
+
+    fun overlapsWith(rect: Rectangle): Boolean {
+        //two rectangles do not overlap when one is above/below, or to the left/right of the other rectangle.
+        return p2.y >= rect.p1.y && p1.y <= rect.p2.y && p2.x >= rect.p1.x && p1.x <= rect.p2.x
+    }
+
+    fun contains(rect: Rectangle): Boolean {
+        return p1.x <= rect.p1.x && p1.y <= rect.p1.y && p2.x >= rect.p2.x && p2.y >= rect.p2.y
+    }
+
+    override fun toString(): String {
+        return "(${p1.x},${p1.y}|${p2.x},${p2.y})"
     }
 }

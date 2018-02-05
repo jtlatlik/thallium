@@ -10,7 +10,6 @@ class EditorWindow : View("Thallium") {
 
     val editor = PCBEditor()
 
-
     override val root = borderpane {
         top = menubar {
             menu("_File") {

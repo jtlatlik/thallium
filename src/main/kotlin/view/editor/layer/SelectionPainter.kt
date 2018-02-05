@@ -2,10 +2,10 @@ package view.editor.layer;
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
-import model.Line
-import model.Pad
-import model.PrimitiveVisitor
-import model.Via
+import model.primitives.Line
+import model.primitives.Pad
+import model.primitives.PrimitiveVisitor
+import model.primitives.Via
 import model.geom.Point
 
 class SelectionPainter(val gc: GraphicsContext) : PrimitiveVisitor {

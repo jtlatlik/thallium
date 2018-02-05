@@ -33,8 +33,8 @@ class ViewportTransformation() : Observable() {
         notifyObservers()
     }
 
-    fun getScale(): Double {
-        return mxx
+    fun getScale(): Point {
+        return Point(mxx, myy)
     }
 
     fun getPan(): Point {

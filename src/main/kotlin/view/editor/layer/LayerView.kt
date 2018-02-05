@@ -4,10 +4,8 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import javafx.scene.shape.ArcType
 import model.Layer
-import model.geom.CartesianGrid
-import model.geom.Grid
-import model.geom.Point
-import model.geom.PolarGrid
+import model.LayerType
+import model.geom.*
 import view.editor.PCBEditor
 import java.util.*
 
@@ -15,14 +13,11 @@ class LayerView(val editor: PCBEditor) : Canvas() {
 
     val gc = graphicsContext2D
 
-    var layer: Layer? = null
-    var grid: Grid? = null
     val painter = PrimitivePainter(gc)
 
     init {
         widthProperty().bind(editor.widthProperty())
         heightProperty().bind(editor.heightProperty())
-
         widthProperty().addListener({ _ -> redraw() })
         heightProperty().addListener({ _ -> redraw() })
         editor.viewport.addObserver(Observer { _, _ -> redraw() })
@@ -30,21 +25,29 @@ class LayerView(val editor: PCBEditor) : Canvas() {
 
     fun redraw() {
         gc.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
-        gc.fill = Color.BLACK
+        gc.fill = Color.gray(0.2)
         gc.fillRect(0.0, 0.0, width, height)
 
         val scale = editor.viewport.getScale()
         val pan = editor.viewport.getPan()
-        gc.setTransform(scale, 0.0, 0.0, scale, pan.x, pan.y)
+        gc.setTransform(scale.x, 0.0, 0.0, scale.y, pan.x, pan.y)
 
-        if (grid != null)
-            drawGrid()
+        editor.pcb?.grids?.forEach {
+            drawGrid(it)
+        }
 
-        if (layer != null) {
-            gc.stroke = layer!!.color
-            gc.fill = layer!!.color
-            layer!!.primitives.forEach {
+        var drawn = 0
+        val p1 = editor.viewport.inverseTransform(Point(0.0,0.0))
+        val p2 = editor.viewport.inverseTransform(Point(width,height))
+        val viewBounds = Rectangle(p1,p2)
+
+        editor.pcb?.stackup?.filter {it.type != LayerType.DIELECTRIC}?.forEach {
+            gc.stroke = it.color
+            gc.fill = it.color
+
+            it.primitives.retrieve(viewBounds).forEach {
                 it.accept(painter)
+                ++drawn
             }
         }
     }
@@ -54,17 +57,19 @@ class LayerView(val editor: PCBEditor) : Canvas() {
     override fun prefWidth(height: Double): Double = width
     override fun prefHeight(width: Double): Double = height
 
-    private fun drawGrid() {
+    private fun drawGrid(grid: Grid) {
 
-        gc.lineWidth = 0.5 / editor.viewport.getScale()
-        gc.stroke = grid!!.fineColor
+        gc.lineWidth = 0.5 / editor.viewport.getScale().x
+        gc.stroke = grid.fineColor
 
         when (grid) {
             is CartesianGrid -> {
-                val grid = grid as CartesianGrid
-
                 val (minX, minY) = Point(grid.origin.x, grid.origin.y)
                 val (maxX, maxY) = Point(minX + grid.width, minY + grid.height)
+
+                gc.fill = Color.BLACK
+                gc.fillRect(minX, minY, grid.width, grid.height)
+
                 var p = Point(minX, minY)
 
                 while (p.y <= maxY) {
@@ -81,7 +86,6 @@ class LayerView(val editor: PCBEditor) : Canvas() {
                 }
             }
             is PolarGrid -> {
-                val grid = grid as PolarGrid
                 val (minR, maxR) = Point(grid.startRadius, grid.stopRadius)
                 val (minTheta, maxTheta) = Point(grid.startAngle, grid.stopAngle)
                 var r: Double = minR

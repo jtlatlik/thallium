@@ -15,4 +15,6 @@ abstract class Tool(val editor: PCBEditor) : Observable() {
     open val onMouseReleased = EventHandler<MouseEvent> {}
     open val onMouseDragged = EventHandler<MouseEvent> {}
 
+    abstract fun refreshEventHandlers()
+
 }

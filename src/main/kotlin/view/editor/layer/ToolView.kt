@@ -1,9 +1,7 @@
 package view.editor.layer
 
-import javafx.scene.Cursor
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
-import model.Line
 import model.geom.Point
 import view.editor.PCBEditor
 import view.editor.tools.SelectionTool
@@ -20,7 +18,6 @@ class ToolView(val editor: PCBEditor) : Canvas() {
     init {
         widthProperty().bind(editor.widthProperty())
         heightProperty().bind(editor.heightProperty())
-
         widthProperty().addListener({ _ -> redraw() })
         heightProperty().addListener({ _ -> redraw() })
         editor.viewport.addObserver(Observer { _, _ -> redraw() })
@@ -34,15 +31,15 @@ class ToolView(val editor: PCBEditor) : Canvas() {
 
         val scale = editor.viewport.getScale()
         val pan = editor.viewport.getPan()
-        gc.setTransform(scale, 0.0, 0.0, scale, pan.x, pan.y)
+        gc.setTransform(scale.x, 0.0, 0.0, scale.y, pan.x, pan.y)
 
-        gc.lineWidth = 1.0 / scale
+        gc.lineWidth = 1.0 / scale.x
         when(editor.activeTool) {
             is SelectionTool -> {
                 val tool = editor.activeTool as SelectionTool
                 val painter = SelectionPainter(gc)
 
-                //draw selection rectangle
+                //draw selection bounds
                 if(tool.isSelecting) {
 
                     var p1 = tool.selectionRectangle.p1.copy()

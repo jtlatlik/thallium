@@ -3,8 +3,7 @@ package view.editor.tools
 import javafx.event.EventHandler
 import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
-import model.Primitive
-import model.Via
+import model.primitives.Primitive
 import model.geom.Point
 import model.geom.Rectangle
 import view.editor.PCBEditor
@@ -23,7 +22,8 @@ class SelectionTool(editor: PCBEditor) : Tool(editor) {
         //if so, then don't set isSelecting
         val location = viewport.inverseTransform(Point(it.x, it.y))
 
-        editor.layerView.layer!!.primitives.forEach { p ->
+
+        editor.pcb?.stackup?.flatMap( {layer -> layer.primitives} )?.forEach { p ->
             if(p.isPointInside(location)) {
                 if(selection.contains(p) && it.isControlDown)
                     selection.remove(p)
@@ -34,6 +34,7 @@ class SelectionTool(editor: PCBEditor) : Tool(editor) {
                 return@EventHandler
             }
         }
+
         if(!it.isControlDown)
             selection.clear()
 
@@ -54,7 +55,7 @@ class SelectionTool(editor: PCBEditor) : Tool(editor) {
                 notifyObservers()
             } else {
                 //change tool
-                editor.activeTool = DragTool(editor, selection)
+                editor.activeTool = DragTool(editor, selection, this)
             }
        }
     }
@@ -65,10 +66,9 @@ class SelectionTool(editor: PCBEditor) : Tool(editor) {
             val alsoSelectTouching = selectionRectangle.getSize().x < 0
             val canonicalRect = selectionRectangle.canonical()
 
-            editor.layerView.layer!!.primitives.forEach {
-
-                if (it.isContained(canonicalRect, alsoSelectTouching)) {
-                    selection.add(it)
+            editor.pcb?.stackup?.flatMap( {layer -> layer.primitives} )?.forEach { p ->
+                if (p.isContained(canonicalRect, alsoSelectTouching)) {
+                    selection.add(p)
                 }
             }
 
@@ -91,6 +91,10 @@ class SelectionTool(editor: PCBEditor) : Tool(editor) {
     }
 
     init {
+        refreshEventHandlers()
+    }
+
+    override fun refreshEventHandlers() {
         editor.onMousePressed = this.onMousePressed
         editor.onMouseReleased = this.onMouseReleased
         editor.onMouseDragged = this.onMouseDragged
