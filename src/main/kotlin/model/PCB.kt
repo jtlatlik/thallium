@@ -1,11 +1,13 @@
 package model
 
 import javafx.scene.paint.Color
+import model.adt.QuadTree
 import model.geom.CartesianGrid
 import model.geom.Grid
 import model.geom.Point
 import model.geom.Rectangle
 import model.primitives.Line
+import model.primitives.Primitive
 import model.primitives.Via
 import tornadofx.SortedFilteredList
 import tornadofx.moveDown
@@ -22,13 +24,15 @@ class PCB {
     companion object {
         const val DEFAULT_PCB_WIDTH = 424.0
         const val DEFAULT_PCB_HEIGHT = 85.0
-        const val DEFAULT_GRID_STEP = 0.1
+        const val DEFAULT_GRID_STEP = 0.5
 
         fun loadFromAltiumFile(file: File): PCB {
 
             val pcb = PCB()
             pcb.addLayer("Top Layer", LayerType.SIGNAL, 35.0, Color.RED)
-            val primitives = pcb.stackup.get(0).primitives
+            pcb.addLayer("Bottom Layer", LayerType.SIGNAL, 35.0, Color.BLUE)
+            val topPrimitives = pcb.stackup.get(0).primitives
+            val bottomPrimitives = pcb.stackup.get(1).primitives
             var origin = Point(0.0, 0.0)
             file.forEachLine { line ->
 
@@ -42,14 +46,23 @@ class PCB {
                             }
                         }
                         startsWith("|RECORD=Track") -> {
-                            if (line.contains("LAYER=MID1|")) {
+                            if (line.contains("LAYER=TOP|")) {
                                 val x1 = line.substring(line.indexOf("X1=") + 3, line.indexOf("mil|Y1")).fromMil()
                                 val y1 = line.substring(line.indexOf("Y1=") + 3, line.indexOf("mil|X2")).fromMil()
                                 val x2 = line.substring(line.indexOf("X2=") + 3, line.indexOf("mil|Y2")).fromMil()
                                 val y2 = line.substring(line.indexOf("Y2=") + 3, line.indexOf("mil|WIDTH")).fromMil()
                                 val w = line.substring(line.indexOf("|WIDTH=") + 7, line.indexOf("mil|SUBPOLYINDEX")).fromMil()
                                 val track = Line(Point(x1 - origin.x, y1 - origin.y), Point(x2 - origin.x, y2 - origin.y), w)
-                                primitives.add(track)
+                                topPrimitives.add(track)
+                            }
+                            if (line.contains("LAYER=BOTTOM|")) {
+                                val x1 = line.substring(line.indexOf("X1=") + 3, line.indexOf("mil|Y1")).fromMil()
+                                val y1 = line.substring(line.indexOf("Y1=") + 3, line.indexOf("mil|X2")).fromMil()
+                                val x2 = line.substring(line.indexOf("X2=") + 3, line.indexOf("mil|Y2")).fromMil()
+                                val y2 = line.substring(line.indexOf("Y2=") + 3, line.indexOf("mil|WIDTH")).fromMil()
+                                val w = line.substring(line.indexOf("|WIDTH=") + 7, line.indexOf("mil|SUBPOLYINDEX")).fromMil()
+                                val track = Line(Point(x1 - origin.x, y1 - origin.y), Point(x2 - origin.x, y2 - origin.y), w)
+                                bottomPrimitives.add(track)
                             }
                         }
                         startsWith("|RECORD=Via") -> {
@@ -60,13 +73,13 @@ class PCB {
                                 val h = line.substring(line.indexOf("|HOLESIZE=") + 10, line.indexOf("mil|STARTLAYER")).fromMil() / 2
 
                                 val via = Via(Point(x1, y1), r, h)
-                                primitives.add(via)
+                                pcb.multiLayerPrimitives.add(via)
                             }
                         }
                     }
                 }
             }
-            println(primitives.size)
+
             return pcb
         }
     }
@@ -77,6 +90,9 @@ class PCB {
     val grids: ArrayList<Grid> = arrayListOf(CartesianGrid(origin, Point(DEFAULT_GRID_STEP, DEFAULT_GRID_STEP), size.x, size.y))
 
     private val bounds = Rectangle(origin, size.x, size.y)
+
+    val multiLayerPrimitives = QuadTree<Primitive>(bounds)
+
 
     fun insertLayer(index: Int, name: String, type: LayerType, thickness: Double, color: Color = Color.BLACK) {
         stackup.add(index, Layer(name, type, bounds, thickness, color))

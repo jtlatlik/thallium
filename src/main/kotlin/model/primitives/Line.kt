@@ -5,7 +5,14 @@ import model.geom.*
 
 data class Line(var start: Point, var end: Point, var width: Double) : Primitive() {
 
-    fun center() = (start + end) * 0.5
+    override var center: Point
+        get() = (start + end) * 0.5
+        set(value) {
+            val diff = value - center
+            start += diff
+            end += diff
+        }
+
     fun angle() = Math.toDegrees(Math.atan2(end.y - start.y, end.x - start.x))
 
     override fun accept(visitor: PrimitiveVisitor) {

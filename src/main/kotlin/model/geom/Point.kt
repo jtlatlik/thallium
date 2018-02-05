@@ -16,3 +16,13 @@ operator fun Point.times(s: Int) = Point(s.toDouble()*x, s.toDouble()*y)
 operator fun Point.div(s: Double) = Point(x/s, y/s)
 operator fun Point.div(s: Int) = Point(x/s.toDouble(), y/s.toDouble())
 
+/**
+ * Returns the point sum of all values produced by [selector] function applied to each element in the collection.
+ */
+public inline fun <T> Iterable<T>.sumByPoint(selector: (T) -> Point): Point {
+    var sum = Point(0.0,0.0)
+    for (element in this) {
+        sum += selector(element)
+    }
+    return sum
+}

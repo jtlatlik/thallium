@@ -2,36 +2,28 @@ package view.editor.tools
 
 import javafx.event.EventHandler
 import javafx.scene.input.MouseEvent
-import model.geom.Point
-import model.geom.div
-import model.geom.plus
+import model.geom.*
 import model.primitives.Primitive
 import model.primitives.Via
 import view.editor.PCBEditor
 
+
+
 class DragTool(editor: PCBEditor, val selection: MutableSet<Primitive>, oldTool: Tool) : Tool(editor) {
 
+    val centerOfMass = selection.sumByPoint { it.center } / selection.size
+
+    init {
+        refreshEventHandlers()
+    }
 
     override val onMouseDragged = EventHandler<MouseEvent> {
+        val pos = editor.viewport.inverseTransform(Point(it.x, it.y))
 
-        var center = Point(0.0, 0.0)
-
-        selection.forEach { p ->
-            when (p) {
-                is Via -> {
-                    center += p.center
-                }
-            }
-        }
-
-        center /= selection.size
-
-        
-        selection.forEach { p ->
-            when (p) {
-                is Via -> {
-                    p.center = center
-                }
+        editor.pcb?.let {
+            val cursor = it.grids.get(0).snap(pos)
+            selection.forEach {p ->
+                p.center = cursor
             }
         }
 
@@ -45,7 +37,7 @@ class DragTool(editor: PCBEditor, val selection: MutableSet<Primitive>, oldTool:
     }
 
     init {
-        refreshEventHandlers()
+
     }
 
     override fun refreshEventHandlers() {

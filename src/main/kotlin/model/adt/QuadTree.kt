@@ -7,8 +7,8 @@ import model.geom.div
 class QuadTree<T : Bounded>(val bounds: Rectangle, val maxObjectsPerLevel: Int = DEFAULT_MAX_OBJECTS_PER_LEVEL, val maxDepth: Int = DEFAULT_MAX_DEPTH, val level: Int = 0) : MutableCollection<T> {
 
     companion object {
-        const val DEFAULT_MAX_OBJECTS_PER_LEVEL = 1
-        const val DEFAULT_MAX_DEPTH = 5
+        const val DEFAULT_MAX_OBJECTS_PER_LEVEL = 32
+        const val DEFAULT_MAX_DEPTH = 7
     }
 
     private var childNodes: Array<QuadTree<T>>? = null

@@ -2,9 +2,12 @@ package model.primitives
 
 import model.geom.Point
 import model.geom.Rectangle
+import model.geom.plus
+import model.geom.times
 
 
-data class Pad(val center: Point, val width: Double, val height: Double) : Primitive() {
+data class Pad(override var center: Point, val width: Double, val height: Double) : Primitive() {
+
     override fun accept(visitor: PrimitiveVisitor) {
         visitor.visitPad(this)
     }

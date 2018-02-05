@@ -5,7 +5,8 @@ import model.geom.Rectangle
 import model.geom.minus
 import model.geom.plus
 
-data class Via(var center: Point, var radius: Double, var holeRadius: Double) : Primitive() {
+data class Via(override var center: Point, var radius: Double, var holeRadius: Double) : Primitive() {
+
     override fun accept(visitor: PrimitiveVisitor) {
         visitor.visitVia(this)
     }

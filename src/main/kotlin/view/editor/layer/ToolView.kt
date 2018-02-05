@@ -6,12 +6,13 @@ import model.geom.Point
 import view.editor.PCBEditor
 import view.editor.tools.SelectionTool
 import java.util.*
+import kotlin.system.measureNanoTime
 
 class ToolView(val editor: PCBEditor) : Canvas() {
 
     val gc = graphicsContext2D
 
-    var crosshair: Point = Point(0.0,0.0)
+    var crosshair: Point = Point(0.0, 0.0)
     var crosshairVisible: Boolean = false
 
 
@@ -26,47 +27,53 @@ class ToolView(val editor: PCBEditor) : Canvas() {
 
 
     fun redraw() {
-        gc.setTransform(1.0, 0.0,0.0,1.0,0.0,0.0)
-        gc.clearRect(0.0, 0.0, width, height)
+        val time = measureNanoTime {
 
-        val scale = editor.viewport.getScale()
-        val pan = editor.viewport.getPan()
-        gc.setTransform(scale.x, 0.0, 0.0, scale.y, pan.x, pan.y)
+            gc.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+            gc.clearRect(0.0, 0.0, width, height)
 
-        gc.lineWidth = 1.0 / scale.x
-        when(editor.activeTool) {
-            is SelectionTool -> {
-                val tool = editor.activeTool as SelectionTool
-                val painter = SelectionPainter(gc)
+            val scale = editor.viewport.getScale()
+            val pan = editor.viewport.getPan()
+            gc.setTransform(scale.x, 0.0, 0.0, scale.y, pan.x, pan.y)
 
-                //draw selection bounds
-                if(tool.isSelecting) {
+            gc.lineWidth = 1.0 / scale.x
+            when (editor.activeTool) {
+                is SelectionTool -> {
+                    val tool = editor.activeTool as SelectionTool
+                    val painter = SelectionPainter(gc)
 
-                    var p1 = tool.selectionRectangle.p1.copy()
-                    var size = tool.selectionRectangle.getSize()
+                    //draw selection bounds
+                    if (tool.isSelecting) {
 
-                    gc.save()
-                    gc.fill = Color.web("rgba(0,255,255, 0.25)")
+                        var p1 = tool.selectionRectangle.p1.copy()
+                        var size = tool.selectionRectangle.getSize()
 
-                    if(size.x < 0) {
-                        p1.x += size.x
-                        size.x *= -1
-                        gc.fill = Color.web("rgba(255,255,0, 0.25)")
+                        gc.save()
+                        gc.fill = Color.web("rgba(0,255,255, 0.25)")
+
+                        if (size.x < 0) {
+                            p1.x += size.x
+                            size.x *= -1
+                            gc.fill = Color.web("rgba(255,255,0, 0.25)")
+                        }
+                        if (size.y < 0) {
+                            p1.y += size.y
+                            size.y *= -1
+                        }
+
+                        gc.fillRect(p1.x, p1.y, size.x, size.y)
+                        gc.restore()
                     }
-                    if(size.y < 0) {
-                        p1.y += size.y
-                        size.y *= -1
-                    }
 
-                    gc.fillRect(p1.x, p1.y, size.x, size.y)
-                    gc.restore()
+                    tool.selection.forEach { it.accept(painter) }
                 }
-
-                tool.selection.forEach { it.accept(painter) }
             }
-        }
 
+
+        }
+        println("toolview redraw. time:  time: ${time.toDouble() / 1000} µs")
     }
+
 
 
     fun setCrosshairVisibility(visible: Boolean) {

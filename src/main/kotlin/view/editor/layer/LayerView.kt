@@ -8,6 +8,8 @@ import model.LayerType
 import model.geom.*
 import view.editor.PCBEditor
 import java.util.*
+import kotlin.system.measureNanoTime
+import kotlin.system.measureTimeMillis
 
 class LayerView(val editor: PCBEditor) : Canvas() {
 
@@ -24,32 +26,45 @@ class LayerView(val editor: PCBEditor) : Canvas() {
     }
 
     fun redraw() {
-        gc.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
-        gc.fill = Color.gray(0.2)
-        gc.fillRect(0.0, 0.0, width, height)
-
-        val scale = editor.viewport.getScale()
-        val pan = editor.viewport.getPan()
-        gc.setTransform(scale.x, 0.0, 0.0, scale.y, pan.x, pan.y)
-
-        editor.pcb?.grids?.forEach {
-            drawGrid(it)
-        }
-
         var drawn = 0
-        val p1 = editor.viewport.inverseTransform(Point(0.0,0.0))
-        val p2 = editor.viewport.inverseTransform(Point(width,height))
-        val viewBounds = Rectangle(p1,p2)
+        val time = measureNanoTime {
 
-        editor.pcb?.stackup?.filter {it.type != LayerType.DIELECTRIC}?.forEach {
-            gc.stroke = it.color
-            gc.fill = it.color
 
-            it.primitives.retrieve(viewBounds).forEach {
-                it.accept(painter)
-                ++drawn
+            gc.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+            gc.fill = Color.gray(0.2)
+            gc.fillRect(0.0, 0.0, width, height)
+
+            val scale = editor.viewport.getScale()
+            val pan = editor.viewport.getPan()
+            gc.setTransform(scale.x, 0.0, 0.0, scale.y, pan.x, pan.y)
+
+            editor.pcb?.grids?.forEach {
+                drawGrid(it)
+            }
+
+
+            val p1 = editor.viewport.inverseTransform(Point(0.0, 0.0))
+            val p2 = editor.viewport.inverseTransform(Point(width, height))
+            val viewBounds = Rectangle(p1, p2)
+
+            editor.pcb?.stackup?.filter { it.type != LayerType.DIELECTRIC }?.forEach {
+                gc.stroke = it.color
+                gc.fill = it.color
+
+                it.primitives.retrieve(viewBounds).forEach {
+                    it.accept(painter)
+                    ++drawn
+                }
             }
         }
+        //draw multilayer primitives (via, pads with holes, etc.) at last
+        editor.pcb?.multiLayerPrimitives?.forEach {
+            it.accept(painter)
+            ++drawn
+        }
+
+        println("layerview redraw. primitives: $drawn. time: ${time.toDouble()/1000} µs")
+
     }
 
     override fun isResizable(): Boolean = true
