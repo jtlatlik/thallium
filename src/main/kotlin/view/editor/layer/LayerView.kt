@@ -1,10 +1,12 @@
 package view.editor.layer
 
+import javafx.event.EventHandler
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import javafx.scene.shape.ArcType
 import model.LayerType
 import model.geom.*
+import model.primitives.Hole
 import view.editor.PCBEditor
 import java.util.*
 import kotlin.system.measureNanoTime
@@ -21,6 +23,9 @@ class LayerView(val editor: PCBEditor) : Canvas() {
         widthProperty().addListener({ _ -> redraw() })
         heightProperty().addListener({ _ -> redraw() })
         editor.viewport.addObserver(Observer { _, _ -> redraw() })
+
+        this.onKeyPressed = EventHandler { println("loal") }
+
     }
 
     fun redraw() {
@@ -42,26 +47,29 @@ class LayerView(val editor: PCBEditor) : Canvas() {
                 //draw grids
                 pcb.grids.forEach { drawGrid(it) }
 
-                //draw origin marker
-                drawOrigin(pcb.origin)
-            }
 
 
-            val p1 = editor.viewport.inverseTransform(Point(0.0, 0.0))
-            val p2 = editor.viewport.inverseTransform(Point(width, height))
-            val viewBounds = Rectangle(p1, p2)
+                val p1 = editor.viewport.inverseTransform(Point(0.0, 0.0))
+                val p2 = editor.viewport.inverseTransform(Point(width, height))
+                val viewBounds = Box(p1, p2)
 
-            editor.pcb?.stackup?.filter { it.type != LayerType.DIELECTRIC }?.forEach { layer ->
+                pcb.stackup.filter { it.type != LayerType.DIELECTRIC }.reversed().forEach { layer ->
 
-                layer.primitives.retrieve(viewBounds).forEach {
-                    gc.stroke = layer.color
-                    gc.fill = layer.color
-                    it.accept(painter)
-                    gc.lineWidth = 1.0 / editor.viewport.getScale().x
-                    painter.drawBoundingRectangle(it)
-                    ++drawn
+                    layer.primitives.retrieve(viewBounds).forEach {
+                        gc.stroke = layer.color
+                        gc.fill = layer.color
+                        it.accept(painter)
+                        gc.lineWidth = 1.0 / editor.viewport.getScale().x
+                        //painter.drawBoundingRectangle(it)
+
+                        ++drawn
+                    }
                 }
+
             }
+
+
+
         }
         //draw multilayer primitives (via, pads with holes, etc.) at last
         editor.pcb?.multiLayerPrimitives?.forEach {
@@ -69,7 +77,7 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             ++drawn
         }
 
-        println("layerview redraw. primitives: $drawn. time: ${time.toDouble() / 1000} µs")
+        //println("layerview redraw. primitives: $drawn. time: ${time.toDouble() / 1000} µs")
 
     }
 
@@ -79,26 +87,6 @@ class LayerView(val editor: PCBEditor) : Canvas() {
     override fun prefWidth(height: Double): Double = width
     override fun prefHeight(width: Double): Double = height
 
-    /**
-     * Draws the origin marker at the Point given by [origin]
-     *
-     * @param a point denoting the origin of the PCB
-     */
-    private fun drawOrigin(origin: Point) {
-        gc.stroke = Color.WHITE
-        gc.fill = Color.WHITE
-
-        val scale = editor.viewport.getScale().x
-        gc.lineWidth = 3 / scale
-        val offset = 0.25
-
-        gc.strokeLine(origin.x, origin.y, origin.x + offset, origin.y)
-        gc.strokeLine(origin.x, origin.y, origin.x, origin.y + offset)
-        gc.fillPolygon(doubleArrayOf(origin.x - offset/8, origin.x + offset/8, origin.x),
-                doubleArrayOf(origin.y + offset, origin.y + offset, origin.y + offset*1.25),3)
-        gc.fillPolygon(doubleArrayOf(origin.x + offset, origin.x + offset, origin.x + offset*1.25),
-                doubleArrayOf(origin.y - offset/8, origin.y + offset/8, origin.y),3)
-    }
 
     private fun drawGrid(grid: Grid) {
 

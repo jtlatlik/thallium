@@ -1,12 +1,23 @@
 package model.primitives
 
-import model.geom.Point
-import model.geom.Rectangle
+import model.geom.*
 
-data class Polygon(val points: List<Point>) : Primitive() {
-    override var center: Point
+data class Polygon(val vertices: MutableList<Point>) : Primitive() {
+
+    override var rotation: Double
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
         set(value) {}
+
+    override var center: Point
+        get() {
+            return vertices.sumByPoint { it } / vertices.size
+        }
+        set(value) {
+            val offset = value - center
+            vertices.forEachIndexed { i, _ ->
+                vertices[i] += offset
+            }
+        }
 
     override fun accept(visitor: PrimitiveVisitor) {
         visitor.visitPolygon(this)
@@ -14,27 +25,27 @@ data class Polygon(val points: List<Point>) : Primitive() {
 
     override fun isPointInside(point: Point): Boolean {
 
-        //return true if point is a convex combination of the polygons vertices
-        return false
-    }
+        //check whether point lies in the bounding box of the primitive first
+        if (!getBoundingBox().contains(point))
+            return false
 
-    override fun isContained(rectangle: Rectangle, touching: Boolean): Boolean {
+        //apply ray casting algorithm
+        var inside = false
+        var j = vertices.size - 1
+        for (i in 0 until vertices.size) {
 
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getBoundingRect(): Rectangle {
-
-        var min = Point(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY)
-        var max = Point(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY)
-
-        points.forEach {
-            min.x = minOf(min.x, it.x)
-            max.x = maxOf(max.x, it.x)
-            min.y = minOf(min.y, it.y)
-            max.y= maxOf(max.y, it.y)
+            if ((vertices[i].y > point.y) != (vertices[j].y > point.y) &&
+                    (point.x < (vertices[j].x - vertices[i].x) * (point.y - vertices[i].y) / (vertices[j].y - vertices[i].y) + vertices[i].x)) {
+                inside = !inside
+            }
+            j = i
         }
-        return Rectangle(min,max)
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return inside
+    }
+
+    override fun getBoundingBox(): Box {
+
+        val (min,max) = vertices.minMax()
+        return Box(min, max)
     }
 }

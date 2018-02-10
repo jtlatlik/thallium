@@ -1,10 +1,10 @@
 package model.adt
 
 import model.geom.Bounded
-import model.geom.Rectangle
+import model.geom.Box
 import model.geom.div
 
-class QuadTree<T : Bounded>(val bounds: Rectangle, val maxObjectsPerLevel: Int = DEFAULT_MAX_OBJECTS_PER_LEVEL, val maxDepth: Int = DEFAULT_MAX_DEPTH, val level: Int = 0) : MutableCollection<T> {
+class QuadTree<T : Bounded>(val bounds: Box, val maxObjectsPerLevel: Int = DEFAULT_MAX_OBJECTS_PER_LEVEL, val maxDepth: Int = DEFAULT_MAX_DEPTH, val level: Int = 0) : MutableCollection<T> {
 
     companion object {
         const val DEFAULT_MAX_OBJECTS_PER_LEVEL = 32
@@ -140,7 +140,7 @@ class QuadTree<T : Bounded>(val bounds: Rectangle, val maxObjectsPerLevel: Int =
      *     *
      * @return a list of objects potentially colliding with [rect]
      */
-    fun retrieve(rect: Rectangle): List<T> {
+    fun retrieve(rect: Box): List<T> {
 
         val returnList = arrayListOf<T>()
 
@@ -148,12 +148,21 @@ class QuadTree<T : Bounded>(val bounds: Rectangle, val maxObjectsPerLevel: Int =
         returnList.addAll(objects)
 
         childNodes?.forEach {
-            if (rect.overlapsWith(it.bounds)) {
+            if (rect intersectsWith it.bounds) {
                 returnList.addAll(it.retrieve(rect))
             }
         }
 
         return returnList
+    }
+
+    /**
+     * Reinserts the element into the tree. This must be called if the bounds of an element have changed.
+     */
+    fun reinsert(element: T) {
+        if(!remove(element))
+            throw NoSuchElementException()
+        add(element)
     }
 
     /**
@@ -167,10 +176,10 @@ class QuadTree<T : Bounded>(val bounds: Rectangle, val maxObjectsPerLevel: Int =
         val (x, y) = bounds.p1
         val (w, h) = bounds.getSize() / 2
         childNodes = arrayOf(
-                QuadTree(Rectangle(x + w, y, w, h), maxObjectsPerLevel, maxDepth, level + 1),
-                QuadTree(Rectangle(x, y, w, h), maxObjectsPerLevel, maxDepth, level + 1),
-                QuadTree(Rectangle(x, y + h, w, h), maxObjectsPerLevel, maxDepth, level + 1),
-                QuadTree(Rectangle(x + w, y + h, w, h), maxObjectsPerLevel, maxDepth, level + 1)
+                QuadTree(Box(x + w, y, w, h), maxObjectsPerLevel, maxDepth, level + 1),
+                QuadTree(Box(x, y, w, h), maxObjectsPerLevel, maxDepth, level + 1),
+                QuadTree(Box(x, y + h, w, h), maxObjectsPerLevel, maxDepth, level + 1),
+                QuadTree(Box(x + w, y + h, w, h), maxObjectsPerLevel, maxDepth, level + 1)
         )
     }
 
@@ -178,7 +187,7 @@ class QuadTree<T : Bounded>(val bounds: Rectangle, val maxObjectsPerLevel: Int =
      * @return true, iff the element's bounding box lies within the bounds of this QuadTree
      */
     private fun canHold(element: Bounded): Boolean {
-        val elementBounds = element.getBoundingRect()
+        val elementBounds = element.getBoundingBox()
         val (x1, y1) = elementBounds.p1
         val (x2, y2) = elementBounds.p2
 

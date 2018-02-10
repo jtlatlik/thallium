@@ -1,6 +1,9 @@
 package view.editor
 
+import javafx.application.Platform
 import javafx.event.EventHandler
+import javafx.scene.input.Clipboard
+import javafx.scene.input.DataFormat
 import javafx.scene.layout.StackPane
 import model.PCB
 import model.geom.*
@@ -11,11 +14,15 @@ import view.editor.layer.ToolView
 
 import view.editor.tools.SelectionTool
 import view.editor.tools.Tool
+import java.nio.ByteBuffer
+import java.util.*
 
 class PCBEditor : StackPane() {
 
+    var viewport: Viewport = Viewport()
 
-    var viewport: ViewportTransformation = ViewportTransformation()
+    val toolStack = Stack<Tool>()
+
     var activeTool: Tool = SelectionTool(this)
         set(tool: Tool) {
             tool.refreshEventHandlers()
@@ -23,16 +30,15 @@ class PCBEditor : StackPane() {
 
     var pcb: PCB? = null
 
-    //var grid: Grid = CartesianGrid(Point(0.0, 0.0), Point(0.5, 0.5), 50.0, 30.0)
-
-    //var grid: Grid = PolarGrid(Point(0.0, 0.0), 5.0, 10.0, 100.0, 600.0)
-
     val layerView = LayerView(this)
     val toolView = ToolView(this)
 
     init {
 
-        setMinSize(0.0,0.0) //this allows clipping
+        setMinSize(0.0, 0.0) //this allows clipping
+
+        viewport.widthProperty.bind(widthProperty())
+        viewport.heightProperty.bind(heightProperty())
 
         requestFocus()
 
@@ -48,6 +54,7 @@ class PCBEditor : StackPane() {
         }
 
         onScroll = EventHandler {
+
             if (it.isControlDown) {
                 val scaleAdjust = if (it.deltaY < 0) 0.8 else 1.2
                 val oldScale = viewport.getScale().x
@@ -61,7 +68,14 @@ class PCBEditor : StackPane() {
             }
 
         }
+
+
     }
+
+    fun paste() {
+        
+    }
+
 
     fun fitView() {
 
@@ -69,7 +83,7 @@ class PCBEditor : StackPane() {
             return
 
         val viewportSize = Point(width, height)
-        println(viewportSize)
+
         val ar = width / height
         val grid = pcb?.grids?.get(0) as CartesianGrid
 
@@ -95,5 +109,9 @@ class PCBEditor : StackPane() {
     fun setPCB(pcb: PCB) {
         this.pcb = pcb
         refresh()
+    }
+
+    companion object {
+        val altiumDataFormat = DataFormat("Protel-PCB") //register altium clipboard data format
     }
 }

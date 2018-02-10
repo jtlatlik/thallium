@@ -1,14 +1,22 @@
 package view.editor
 
+import javafx.beans.property.Property
+import javafx.beans.property.SimpleDoubleProperty
 import model.geom.Point
 import java.util.*
+import tornadofx.*
 
 
-class ViewportTransformation() : Observable() {
+class Viewport() : Observable() {
     private var mxx: Double = 1.0
     private var myy: Double = 1.0
     private var mxt: Double = 0.0
     private var myt: Double = 0.0
+
+    val widthProperty = SimpleDoubleProperty(1.0)
+    val heightProperty = SimpleDoubleProperty(1.0)
+    val width by widthProperty
+    val height by heightProperty
 
     fun setScale(scale: Double) {
         mxx = scale

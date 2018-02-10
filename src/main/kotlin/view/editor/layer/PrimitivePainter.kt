@@ -13,19 +13,18 @@ class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
 
     fun drawBoundingRectangle(p: Primitive) {
         gc.stroke = Color.WHITE
-        p.getBoundingRect().let {
+        p.getBoundingBox().let {
             gc.strokeRect(it.p1.x, it.p1.y, it.width, it.height)
         }
     }
 
-    fun contrastColor(color: Color) : Color
-    {
+    fun contrastColor(color: Color): Color {
         // Counting the perceptive luminance - human eye favors green color...
-        val a : Double = 1 - ( 0.299 * color.red + 0.587 * color.green + 0.114 * color.blue)/255
+        val a: Double = 1 - (0.299 * color.red + 0.587 * color.green + 0.114 * color.blue) / 255
 
         val d = if (a < 0.5) 0 else 255
 
-        return Color.rgb(d,d,d)
+        return Color.rgb(d, d, d)
     }
 
 
@@ -55,32 +54,53 @@ class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
     }
 
     override fun visitPad(pad: Pad) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+
     }
 
     override fun visitVia(via: Via) {
         gc.save()
-        val (x1,y1) = Point(via.center.x - via.radius, via.center.y - via.radius)
-        val (x2,y2) = Point(via.center.x - via.holeRadius, via.center.y - via.holeRadius)
+        val (x1, y1) = Point(via.center.x - via.radius, via.center.y - via.radius)
+        val (x2, y2) = Point(via.center.x - via.holeRadius, via.center.y - via.holeRadius)
         val diameter = via.radius * 2
         val holeSize = via.holeRadius * 2
         gc.fill = Color.SILVER
         gc.fillOval(x1, y1, diameter, diameter)
         gc.fill = Color.CHOCOLATE
-        gc.fillOval(x2,y2, holeSize, holeSize)
+        gc.fillOval(x2, y2, holeSize, holeSize)
 
-//        if(via.net != null) {
-//            gc.lineWidth = 1.0
-//            gc.stroke = contrastColor(gc.fill as Color)
-//            gc.strokeText(via.net, via.center.x, via.center.y)
-//        }
+
+        via.net?.let {
+            gc.lineWidth = 1.0
+            gc.stroke = contrastColor(gc.fill as Color)
+            gc.strokeText(it.name, via.center.x, via.center.y)
+        }
+
         gc.restore()
     }
 
     override fun visitPolygon(poly: Polygon) {
-        val xPoints = poly.points.map { it.x }.toDoubleArray()
-        val yPoints = poly.points.map { it.y }.toDoubleArray()
+        val xPoints = poly.vertices.map { it.x }.toDoubleArray()
+        val yPoints = poly.vertices.map { it.y }.toDoubleArray()
         gc.fillPolygon(xPoints, yPoints, xPoints.size)
+    }
+
+    override fun visitHole(hole: Hole) {
+        gc.save()
+        gc.fill = Color.gray(0.1)
+        gc.translate(hole.center.x, hole.center.y)
+        gc.rotate(hole.rotation)
+
+        val pos = Point( - hole.radius - hole.length / 2,- hole.radius)
+        val size = Point(hole.radius * 2 + hole.length,hole.radius * 2)
+        val arcSize = Point(hole.radius * 2 * hole.type.cornerRadius,hole.radius * 2 * hole.type.cornerRadius)
+
+        gc.fillRoundRect(pos.x, pos.y, size.x, size.y, arcSize.x, arcSize.y)
+        gc.restore()
+    }
+
+    override fun visitRectangle(rect: Rectangle) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
 }

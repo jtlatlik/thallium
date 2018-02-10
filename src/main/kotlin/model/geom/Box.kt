@@ -1,6 +1,6 @@
 package model.geom
 
-data class Rectangle(var p1: Point, var p2: Point) {
+data class Box(var p1: Point, var p2: Point) {
 
     constructor(p1: Point, width: Double, height: Double) : this(p1, p1 + Point(width, height))
     constructor(x: Double, y: Double, width: Double, height: Double) : this(Point(x, y), Point(x, y) + Point(width, height))
@@ -16,29 +16,29 @@ data class Rectangle(var p1: Point, var p2: Point) {
         return Point(width, height)
     }
 
-    fun copy() = Rectangle(p1.copy(), p2.copy())
+    fun copy() = Box(p1.copy(), p2.copy())
 
-    fun canonical(): Rectangle {
-        var canonicalRect = this.copy()
+    fun canonical(): Box {
+        var canonicalBox = this.copy()
 
         if (p2.x < p1.x) {
-            canonicalRect.p1.x = p2.x
-            canonicalRect.p2.x = p1.x
+            canonicalBox.p1.x = p2.x
+            canonicalBox.p2.x = p1.x
         }
         if (p2.y < p1.y) {
-            canonicalRect.p1.y = p2.y
-            canonicalRect.p2.y = p1.y
+            canonicalBox.p1.y = p2.y
+            canonicalBox.p2.y = p1.y
         }
-        return canonicalRect
+        return canonicalBox
     }
 
-    fun overlapsWith(rect: Rectangle): Boolean {
+    infix fun intersectsWith(box: Box): Boolean {
         //two rectangles do not overlap when one is above/below, or to the left/right of the other rectangle.
-        return p2.y >= rect.p1.y && p1.y <= rect.p2.y && p2.x >= rect.p1.x && p1.x <= rect.p2.x
+        return p2.y >= box.p1.y && p1.y <= box.p2.y && p2.x >= box.p1.x && p1.x <= box.p2.x
     }
 
-    fun contains(rect: Rectangle): Boolean {
-        return p1.x <= rect.p1.x && p1.y <= rect.p1.y && p2.x >= rect.p2.x && p2.y >= rect.p2.y
+    fun contains(box: Box): Boolean {
+        return p1.x <= box.p1.x && p1.y <= box.p1.y && p2.x >= box.p2.x && p2.y >= box.p2.y
     }
 
     fun contains(p: Point): Boolean {

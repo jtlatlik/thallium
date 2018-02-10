@@ -2,6 +2,6 @@ package model.geom
 
 interface Bounded {
 
-    fun getBoundingRect(): Rectangle
+    fun getBoundingBox(): Box
 
 }

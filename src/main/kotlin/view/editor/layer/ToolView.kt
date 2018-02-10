@@ -1,5 +1,6 @@
 package view.editor.layer
 
+import javafx.event.EventHandler
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import model.geom.Point
@@ -15,16 +16,17 @@ class ToolView(val editor: PCBEditor) : Canvas() {
     var crosshair: Point = Point(0.0, 0.0)
     var crosshairVisible: Boolean = false
 
-
     init {
         widthProperty().bind(editor.widthProperty())
         heightProperty().bind(editor.heightProperty())
         widthProperty().addListener({ _ -> redraw() })
         heightProperty().addListener({ _ -> redraw() })
+
+        this.onKeyPressed = EventHandler { println("lol") }
+
         editor.viewport.addObserver(Observer { _, _ -> redraw() })
         editor.activeTool.addObserver(Observer { _, _ -> redraw() })
     }
-
 
     fun redraw() {
         val time = measureNanoTime {
@@ -45,8 +47,8 @@ class ToolView(val editor: PCBEditor) : Canvas() {
                     //draw selection bounds
                     if (tool.isSelecting) {
 
-                        var p1 = tool.selectionRectangle.p1.copy()
-                        var size = tool.selectionRectangle.getSize()
+                        var p1 = tool.selectionBox.p1.copy()
+                        var size = tool.selectionBox.getSize()
 
                         gc.save()
                         gc.fill = Color.web("rgba(0,255,255, 0.25)")
@@ -65,21 +67,48 @@ class ToolView(val editor: PCBEditor) : Canvas() {
                         gc.restore()
                     }
 
-                    tool.selection.forEach { it.accept(painter) }
+                    tool.selection.keys.forEach {
+                        it.accept(painter)
+                    }
                 }
             }
-
-
+            editor.pcb?.let {pcb ->
+                //draw origin marker
+                drawOrigin(pcb.origin)
+            }
         }
-        println("toolview redraw. time:  time: ${time.toDouble() / 1000} µs")
+        //println("toolview redraw. time:  time: ${time.toDouble() / 1000} µs")
     }
 
 
+    /**
+     * Draws the origin marker at the Point given by [origin]
+     *
+     * @param a point denoting the origin of the PCB
+     */
+    private fun drawOrigin(origin: Point) {
+        gc.setLineDashes()
+        gc.stroke = Color.WHITE
+        gc.fill = Color.WHITE
+
+        val scale = editor.viewport.getScale().x
+        gc.lineWidth = 0.5 / editor.viewport.getScale().x
+
+        val offset = 20 / scale
+
+        gc.strokeLine(origin.x, origin.y, origin.x + offset, origin.y)
+        gc.strokeLine(origin.x, origin.y, origin.x, origin.y + offset)
+        gc.fillPolygon(doubleArrayOf(origin.x - offset/8, origin.x + offset/8, origin.x),
+                doubleArrayOf(origin.y + offset, origin.y + offset, origin.y + offset*1.25),3)
+        gc.fillPolygon(doubleArrayOf(origin.x + offset, origin.x + offset, origin.x + offset*1.25),
+                doubleArrayOf(origin.y - offset/8, origin.y + offset/8, origin.y),3)
+
+        gc.fillOval(origin.x - offset/8, origin.y - offset/8, offset/4, offset/4)
+    }
 
     fun setCrosshairVisibility(visible: Boolean) {
         crosshairVisible = visible
 
-        redraw()
     }
 
 //    private fun drawOverlay() {

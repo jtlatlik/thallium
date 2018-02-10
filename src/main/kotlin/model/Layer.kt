@@ -3,13 +3,13 @@ package model
 import javafx.beans.property.*
 import javafx.scene.paint.Color
 import model.adt.QuadTree
-import model.geom.Rectangle
+import model.geom.Box
 import model.primitives.Primitive
 import tornadofx.*
 import java.util.*
 import javax.json.JsonObject
 
-class Layer(name: String, type: LayerType, bounds: Rectangle, thickness: Double = 35.0, color: Color = Color.BLACK) : JsonModel {
+class Layer(name: String, type: LayerType, bounds: Box, thickness: Double = 35.0, color: Color = Color.BLACK) : JsonModel {
 
     val id = UUID.randomUUID()
 

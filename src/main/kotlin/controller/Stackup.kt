@@ -3,7 +3,7 @@ package controller
 import javafx.scene.paint.Color
 import model.Layer
 import model.LayerType
-import model.geom.Rectangle
+import model.geom.Box
 import tornadofx.*
 import java.io.File
 import java.util.*
@@ -11,7 +11,7 @@ import java.util.*
 class Stackup : Controller() {
     val editorController: EditorController by inject()
     val pcb = editorController.pcb
-    val bounds = Rectangle(pcb.origin, pcb.size.x, pcb.size.y)
+    val bounds = Box(pcb.origin, pcb.size.x, pcb.size.y)
 
     fun insertLayer(index: Int, name: String, type: LayerType, thickness: Double, color: Color = Color.BLACK) {
         pcb.stackup.add(index, Layer(name, type, bounds, thickness, color))
