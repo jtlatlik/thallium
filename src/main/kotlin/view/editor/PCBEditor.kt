@@ -1,20 +1,15 @@
 package view.editor
 
-import javafx.application.Platform
 import javafx.event.EventHandler
-import javafx.scene.input.Clipboard
 import javafx.scene.input.DataFormat
 import javafx.scene.layout.StackPane
 import model.PCB
 import model.geom.*
-
 import tornadofx.add
 import view.editor.layer.LayerView
 import view.editor.layer.ToolView
-
 import view.editor.tools.SelectionTool
 import view.editor.tools.Tool
-import java.nio.ByteBuffer
 import java.util.*
 
 class PCBEditor : StackPane() {
@@ -69,36 +64,34 @@ class PCBEditor : StackPane() {
 
         }
 
-
     }
 
     fun paste() {
-        
+
     }
 
 
     fun fitView() {
+        pcb?.let {
 
-        if (pcb == null)
-            return
+            val arViewPort = width / height
+            val arPCB = it.size.x / it.size.y
 
-        val viewportSize = Point(width, height)
+            val padding = Point(0.01, 0.01) * (if (arPCB > 1.0) it.size.x else it.size.y)
 
-        val ar = width / height
-        val grid = pcb?.grids?.get(0) as CartesianGrid
+            val p1 = it.origin - padding
+            val p2 = it.origin + it.size + padding
 
-        val gridSize = Point(grid.width, grid.height)
-
-        val p1 = grid.origin - grid.step
-        val p2 = grid.origin + gridSize + grid.step
-
-        val scale = if (ar <= 1.0) {
-            viewportSize.x / (p2 - p1).x
-        } else {
-            viewportSize.y / (p2 - p1).y
+            if (arPCB > arViewPort) {
+                val scale = width / (p2 - p1).x
+                val pan =-p1 * scale + Point(0.0, (height - (it.size.y + padding.y*2)* scale) / 2)
+                viewport.setScalePan(scale, pan)
+            } else {
+                val scale = height / (p2 - p1).y
+                val pan = -p1 * scale + Point((width - (it.size.x + padding.x*2 )* scale) / 2, 0.0)
+                viewport.setScalePan(scale, pan)
+            }
         }
-        val pan = -p1 * scale
-        viewport.setScalePan(scale, pan)
     }
 
     fun refresh() {

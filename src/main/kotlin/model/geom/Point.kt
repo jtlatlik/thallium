@@ -11,6 +11,10 @@ data class Point(var x: Double, var y: Double) {
         val length = Math.sqrt(x*x + y*y)
         return Point(x/length, y/length)
     }
+
+    override fun toString(): String {
+        return "[$x, $y]"
+    }
 }
 
 operator fun Point.unaryMinus() = Point(-x,-y)

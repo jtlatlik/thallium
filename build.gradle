@@ -28,6 +28,8 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     compile 'no.tornado:tornadofx:1.7.14'
+    compile group: 'org.apache.poi', name: 'poi', version: '3.17'
+
 
 }
 

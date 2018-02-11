@@ -16,6 +16,8 @@ class EditorWindow : View("Thallium") {
 
     override val root = borderpane {
 
+
+
         top = menubar {
             menu("_File") {
                 item("_New PCB", "Ctrl+N") {
@@ -47,7 +49,7 @@ class EditorWindow : View("Thallium") {
                 item("_Stackup", "Ctrl+L") {
                     action {
                         find(StackupEditorView::class).openModal(stageStyle = StageStyle.UTILITY, block = true)
-                        //editor.refresh()
+                        editor.refresh()
                     }
                 }
             }

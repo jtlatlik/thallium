@@ -4,7 +4,7 @@ import model.geom.*
 import model.nets.Net
 
 
-class Line(var start: Point, var end: Point, var width: Double, net: Net? = null) : Primitive(net) {
+class Line(var start: Point, var end: Point, var width: Double = 0.0, net: Net? = null) : Primitive(net) {
 
     override var center: Point
         get() = (start + end) * 0.5
@@ -13,6 +13,10 @@ class Line(var start: Point, var end: Point, var width: Double, net: Net? = null
             start += diff
             end += diff
         }
+
+    override fun toString(): String {
+        return "Line: $start --> $end"
+    }
 
     val angle: Double
         get() = Math.atan2(end.y - start.y, end.x - start.x)

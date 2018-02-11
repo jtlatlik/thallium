@@ -1,7 +1,6 @@
 package view
 
 import controller.EditorController
-import controller.Stackup
 import javafx.beans.binding.DoubleBinding
 import javafx.beans.binding.IntegerBinding
 import javafx.collections.FXCollections
@@ -13,7 +12,6 @@ import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.Priority
-import javafx.scene.paint.Color
 import model.Layer
 import model.LayerType
 import tornadofx.*
@@ -23,7 +21,7 @@ class StackupEditorView : View("Stackup Editor") {
     val pcb = editor.pcb
     val layertypes = FXCollections.observableArrayList(LayerType.values().asList())
 
-    val table: TableView<Layer> = tableview(pcb.stackup) {
+    val table: TableView<Layer> = tableview(pcb?.stackup ?: SortedFilteredList()) {
 
         isEditable = true
         columnResizePolicy = SmartResize.POLICY
@@ -64,20 +62,20 @@ class StackupEditorView : View("Stackup Editor") {
         addEventFilter(KeyEvent.KEY_PRESSED, { event ->
             if (event.code == KeyCode.DELETE && selectionModel.selectedIndex != -1) {
                 val index = selectionModel.selectedIndex
-                pcb.removeLayers(selectionModel.selectedItems.asIterable())
+                pcb?.removeLayers(selectionModel.selectedItems.asIterable())
                 selectionModel.clearAndSelect(index)
 
             }
 
             if(event.isAltDown && event.code == KeyCode.UP  && selectionModel.selectedIndex != -1) {
                 val index = selectionModel.selectedIndex
-                pcb.moveLayerUp(selectionModel.selectedItem)
+                pcb?.moveLayerUp(selectionModel.selectedItem)
                 selectionModel.clearAndSelect(index - 1)
             }
 
             if(event.isAltDown && event.code == KeyCode.DOWN && selectionModel.selectedIndex != -1) {
                 val index = selectionModel.selectedIndex
-                pcb.moveLayerDown(selectionModel.selectedItem)
+                pcb?.moveLayerDown(selectionModel.selectedItem)
                 selectionModel.clearAndSelect(index + 1)
             }
         })
@@ -99,7 +97,7 @@ class StackupEditorView : View("Stackup Editor") {
 
             button("Delete Selected") {
                 action {
-                    pcb.removeLayers(table.selectionModel.selectedItems.asIterable())
+                    pcb?.removeLayers(table.selectionModel.selectedItems.asIterable())
                 }
 
             }
@@ -119,9 +117,9 @@ class StackupEditorView : View("Stackup Editor") {
                         action {
                             val index = table.selectionModel.selectedIndex
                             if (index > -1) {
-                                pcb.insertLayer(index, it, 35.0)
+                                pcb?.insertLayer(index, it, 35.0)
                             } else {
-                                pcb.addLayer(it, 35.0)
+                                pcb?.addLayer(it, 35.0)
                             }
                             table.requestFocus()
                         }

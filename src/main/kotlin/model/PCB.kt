@@ -3,10 +3,7 @@ package model
 import com.sun.media.sound.InvalidFormatException
 import javafx.scene.paint.Color
 import model.adt.QuadTree
-import model.geom.CartesianGrid
-import model.geom.Grid
-import model.geom.Point
-import model.geom.Box
+import model.geom.*
 import model.nets.Net
 import model.primitives.*
 import model.primitives.Hole.HoleType
@@ -17,6 +14,8 @@ import java.io.File
 import java.nio.charset.Charset
 import java.util.*
 
+typealias BoardShape = MutableList<Pair<List<Primitive>, Boolean>>
+
 fun String.fromUnit(): Double {
     if (this.endsWith("mil"))
         return this.substringBefore("mil").toDouble() * 0.0254
@@ -25,16 +24,19 @@ fun String.fromUnit(): Double {
     throw NumberFormatException("illegal unit or no unit found in number: $this")
 }
 
+const val EXCEPTION_STRING = "Invalid Altium ASCII PcbDoc file"
+
 fun SortedFilteredList<Layer>.findTopLayer() = this.find { it.type == model.LayerType.SIGNAL }
 fun SortedFilteredList<Layer>.findBottomLayer() = this.findLast { it.type == model.LayerType.SIGNAL }
 
 data class PCB(val stackup: SortedFilteredList<Layer>,
                val nets: MutableSet<Net>,
                var origin: Point = Point(0.0, 0.0),
-               var size: Point = Point(DEFAULT_PCB_WIDTH, DEFAULT_PCB_HEIGHT)) {
+               var size: Point = Point(DEFAULT_PCB_WIDTH, DEFAULT_PCB_HEIGHT), val boardShape: BoardShape) {
 
     val allPrimitives: List<QuadTree<Primitive>>
         get() = listOf(multiLayerPrimitives) + stackup.items.map { it.primitives }
+
 
     val grids: ArrayList<Grid> = arrayListOf(CartesianGrid(origin, Point(DEFAULT_GRID_STEP, DEFAULT_GRID_STEP), size.x, size.y))
 
@@ -86,8 +88,11 @@ data class PCB(val stackup: SortedFilteredList<Layer>,
             val nets = mutableMapOf<Int, Net>()
             val stackup = SortedFilteredList<Layer>()
             var origin = Point(0.0, 0.0)
-            var size = Point(424.0, 85.0)
-            val multiLayerPrimitives = QuadTree<Primitive>(Box(origin, size.x, size.y))
+            var size = Point(0.0, 0.0)
+
+            val boardShape: BoardShape = mutableListOf()
+
+            var multiLayerPrimitives: QuadTree<Primitive>? = null
 
 
             fun getLayerOrNull(layerString: String) = when (layerString) {
@@ -108,15 +113,101 @@ data class PCB(val stackup: SortedFilteredList<Layer>,
 
             var layerIndex = 0
 
+
             file.forEachLine(Charset.defaultCharset()) { line ->
 
                 val tokens = line.split("|").drop(1)
                 val record: Map<String, String> = tokens.associateBy({ it.substringBefore("=") }, { it.substringAfter("=") })
 
+
+                fun parseRegionPath(): List<Primitive> {
+
+                    var vertexIndex = 1
+                    var path = mutableListOf<Primitive>()
+
+                    while ("VX$vertexIndex" in record) {
+                        val kind = record["KIND$vertexIndex"]?.toInt()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val vx: Double = record["VX$vertexIndex"]?.fromUnit()
+                                ?: throw  InvalidFormatException(EXCEPTION_STRING)
+                        val vy = record["VY$vertexIndex"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val cx = record["CX$vertexIndex"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val cy = record["CY$vertexIndex"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val sa = record["SA$vertexIndex"]?.toDouble()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val ea = record["EA$vertexIndex"]?.toDouble()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val r = record["R$vertexIndex"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+
+                        val kindLast = record["KIND${vertexIndex - 1}"]?.toInt()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val vxLast: Double = record["VX${vertexIndex - 1}"]?.fromUnit()
+                                ?: throw  InvalidFormatException(EXCEPTION_STRING)
+                        val vyLast = record["VY${vertexIndex - 1}"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val cxLast = record["CX${vertexIndex - 1}"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val cyLast = record["CY${vertexIndex - 1}"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val saLast = record["SA${vertexIndex - 1}"]?.toDouble()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val eaLast = record["EA${vertexIndex - 1}"]?.toDouble()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+                        val rLast = record["R${vertexIndex - 1}"]?.fromUnit()
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+
+                        val prim = when (kindLast) {
+                            0 -> Line(Point(vxLast, vyLast), Point(vx, vy))
+                            1 -> Arc(Point(cxLast, cyLast), rLast, saLast, eaLast)
+                            else -> throw InvalidFormatException("Unexpected board shape")
+                        }
+                        path.add(prim)
+                        println(prim)
+                        ++vertexIndex
+                    }
+
+                    return path
+
+                }
+
                 when (record["RECORD"]) {
                     "Board" -> {
                         origin.x = record["ORIGINX"]?.fromUnit() ?: origin.x
                         origin.y = record["ORIGINY"]?.fromUnit() ?: origin.y
+
+                        val min = Point(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY)
+                        val max = Point(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY)
+
+                        val path = parseRegionPath()
+                        if (path.isNotEmpty()) {
+                            boardShape.add(Pair(path, false))
+
+                            path.forEach {
+                                val (start, end) = when (it) {
+                                    is Line -> Pair(it.start, it.end)
+                                    is Arc -> Pair(it.start, it.end)
+                                    else -> throw Exception("Unexpected path segment")
+                                }
+
+                                min.x = minOf(start.x, min.x)
+                                min.y = minOf(start.y, min.y)
+                                max.x = maxOf(start.x, max.x)
+                                max.y = maxOf(start.y, max.y)
+                                min.x = minOf(end.x, min.x)
+                                min.y = minOf(end.y, min.y)
+                                max.x = maxOf(end.x, max.x)
+                                max.y = maxOf(end.y, max.y)
+                            }
+                            size = max - min
+                            println("Board size: $size")
+                            if (multiLayerPrimitives == null) {
+                                multiLayerPrimitives = QuadTree<Primitive>(Box(origin, size.x, size.y))
+                            }
+                        }
 
                         while ("V9_STACK_LAYER${layerIndex}_NAME" in record) {
                             val name = record["V9_STACK_LAYER${layerIndex}_NAME"] ?: ""
@@ -152,53 +243,51 @@ data class PCB(val stackup: SortedFilteredList<Layer>,
 
                             ++layerIndex
                         }
-
-
                     }
                     "Net" -> {
                         val id = record["ID"]?.toInt()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         record["NAME"]?.let {
                             nets.put(id, Net(it))
                         }
                     }
                     "Component" -> {
                         val id = record["ID"]?.toInt()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val x = record["X"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val y = record["Y"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val rot = record["ROTATION"]?.toDouble()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                     }
                     "Pad" -> {
                         val componentId = record["ID"]?.toInt() ?: -1
                         val net = nets.get(record["NET"] ?: -1)
                         val name = record["NAME"]
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val x = record["X"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val y = record["Y"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
-                        val width = record["XSIZE"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
-                        val height = record["YSIZE"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+//                        val width = record["XSIZE"]?.fromUnit()
+//                                ?: throw InvalidFormatException(EXCEPTION_STRING)
+//                        val height = record["YSIZE"]?.fromUnit()
+//                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val rot = record["ROTATION"]?.toDouble()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val holeSize = record["HOLESIZE"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val holeLength = record["HOLEWIDTH"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val plated = record["PLATED"]?.toBoolean()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val shape = record["SHAPE"]
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val holeRotation = record["HOLEROTATION"]?.toDouble()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val holeTypeNum = record["HOLETYPE"]?.toInt()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
 
                         val padPrimitives: MutableList<Primitive> = mutableListOf()
 
@@ -206,7 +295,7 @@ data class PCB(val stackup: SortedFilteredList<Layer>,
                             "ROUND" -> 1.0
                             "ROUNDEDRECTANGLE" -> {
                                 record["TOPLAYERCRPCT"]?.toDouble()?.div(100)
-                                        ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                        ?: throw InvalidFormatException(EXCEPTION_STRING)
                             }
                             else -> 0.0
                         }
@@ -216,9 +305,9 @@ data class PCB(val stackup: SortedFilteredList<Layer>,
                                 0 -> HoleType.ROUND
                                 1 -> HoleType.RECTANGLE
                                 2 -> HoleType.SLOT
-                                else -> throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                else -> throw InvalidFormatException(EXCEPTION_STRING)
                             }
-                            val hole = Hole(Point(x, y), holeType, holeSize /2, holeLength, holeRotation, plated)
+                            val hole = Hole(Point(x, y), holeType, holeSize / 2, holeLength, holeRotation, plated)
                             padPrimitives.add(hole)
                         }
 
@@ -230,15 +319,15 @@ data class PCB(val stackup: SortedFilteredList<Layer>,
 
                         layer?.let {
                             val x1 = record["X1"]?.fromUnit()
-                                    ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                    ?: throw InvalidFormatException(EXCEPTION_STRING)
                             val x2 = record["X2"]?.fromUnit()
-                                    ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                    ?: throw InvalidFormatException(EXCEPTION_STRING)
                             val y1 = record["Y1"]?.fromUnit()
-                                    ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                    ?: throw InvalidFormatException(EXCEPTION_STRING)
                             val y2 = record["Y2"]?.fromUnit()
-                                    ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                    ?: throw InvalidFormatException(EXCEPTION_STRING)
                             val width = record["WIDTH"]?.fromUnit()
-                                    ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                    ?: throw InvalidFormatException(EXCEPTION_STRING)
                             val net = nets.get(record["NET"] ?: -1)
 
                             it.primitives.add(Line(Point(x1, y1), Point(x2, y2), width, net))
@@ -248,28 +337,38 @@ data class PCB(val stackup: SortedFilteredList<Layer>,
                     "Via" -> {
                         assert(record["LAYER"] == "MULTILAYER")
                         val x = record["X"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val y = record["Y"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val diameter = record["DIAMETER"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
                         val holeSize = record["HOLESIZE"]?.fromUnit()
-                                ?: throw InvalidFormatException("Invalid Altium ASCII PcbDoc 4.0 file.")
+                                ?: throw InvalidFormatException(EXCEPTION_STRING)
 
                         val net = nets.get(record["NET"] ?: -1)
 
-                        multiLayerPrimitives.add(Via(Point(x, y), diameter / 2, holeSize / 2, net))
+                        multiLayerPrimitives?.add(Via(Point(x, y), diameter / 2, holeSize / 2, net))
                     }
+                    "Region" -> {
+//                        val isBoardCutout = record["ISBOARDCUTOUT"]?.toBoolean() ?: false
+//
+//                        if (isBoardCutout) {
+//                            val path = parseRegionPath()
+//                        }
+                    }
+
 
                 }
 
             }
 
-            val pcb = PCB(stackup, nets.values.toMutableSet(), origin, size)
+            val pcb = PCB(stackup, nets.values.toMutableSet(), origin, size, boardShape)
 
-            pcb.multiLayerPrimitives.addAll(multiLayerPrimitives)
+            multiLayerPrimitives?.let {
+                pcb.multiLayerPrimitives.addAll(it)
+            }
+
             return pcb
-
         }
     }
 

@@ -1,12 +1,13 @@
 package view.editor.layer
 
-import javafx.event.EventHandler
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import javafx.scene.shape.ArcType
 import model.LayerType
+import model.PCB
 import model.geom.*
-import model.primitives.Hole
+import model.primitives.Arc
+import model.primitives.Line
 import view.editor.PCBEditor
 import java.util.*
 import kotlin.system.measureNanoTime
@@ -23,8 +24,6 @@ class LayerView(val editor: PCBEditor) : Canvas() {
         widthProperty().addListener({ _ -> redraw() })
         heightProperty().addListener({ _ -> redraw() })
         editor.viewport.addObserver(Observer { _, _ -> redraw() })
-
-        this.onKeyPressed = EventHandler { println("loal") }
 
     }
 
@@ -44,10 +43,12 @@ class LayerView(val editor: PCBEditor) : Canvas() {
 
             editor.pcb?.let { pcb ->
 
+
+                //draw board outline
+                drawBoardOutline(pcb)
+
                 //draw grids
                 pcb.grids.forEach { drawGrid(it) }
-
-
 
                 val p1 = editor.viewport.inverseTransform(Point(0.0, 0.0))
                 val p2 = editor.viewport.inverseTransform(Point(width, height))
@@ -65,9 +66,14 @@ class LayerView(val editor: PCBEditor) : Canvas() {
                         ++drawn
                     }
                 }
-
+                gc.fill = Color.WHITE
+                gc.beginPath()
+                gc.moveTo(2.0,2.0)
+                //gc.lineTo(2.0,4.0)
+                gc.arc(4.0,4.0,2.0,2.0,90.0,-90.0)
+                gc.closePath()
+                gc.fill()
             }
-
 
 
         }
@@ -87,6 +93,43 @@ class LayerView(val editor: PCBEditor) : Canvas() {
     override fun prefWidth(height: Double): Double = width
     override fun prefHeight(width: Double): Double = height
 
+    private fun drawBoardOutline(pcb: PCB) {
+        gc.lineWidth = 1.0 / editor.viewport.getScale().x
+        gc.fill = Color.BLACK
+        gc.stroke = Color.GRAY
+
+        pcb.boardShape.forEach { (path, subtract) ->
+            var cursor = Point(0.0, 0.0)
+            gc.fill = if (subtract == true) Color.gray(0.2) else Color.BLACK
+            gc.beginPath()
+            path.forEachIndexed { index, prim ->
+                when (prim) {
+                    is Line -> {
+                        if (index == 0) {
+                            gc.moveTo(prim.start.x, prim.start.y)
+                            cursor = prim.start
+                        }
+                        gc.lineTo(prim.end.x, prim.end.y)
+                        cursor = prim.end
+
+                    }
+                    is Arc -> {
+                        if (index == 0) {
+                            gc.moveTo(prim.start.x, prim.start.y)
+                            cursor = prim.start
+                        }
+                        gc.lineTo(prim.end.x, prim.end.y)
+                        //TODO implement me properly
+                        //gc.arc(prim.center.x, prim.center.y, prim.radius, prim.radius, startAngle, baseline)
+                    }
+                    else -> throw Exception("invalid path segment")
+                }
+            }
+            gc.closePath()
+            gc.fill()
+            gc.stroke()
+        }
+    }
 
     private fun drawGrid(grid: Grid) {
 
@@ -97,9 +140,6 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             is CartesianGrid -> {
                 val (minX, minY) = Point(grid.origin.x, grid.origin.y)
                 val (maxX, maxY) = Point(minX + grid.width, minY + grid.height)
-
-                gc.fill = Color.BLACK
-                gc.fillRect(minX, minY, grid.width, grid.height)
 
                 var p = Point(minX, minY)
 

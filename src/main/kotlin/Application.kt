@@ -5,9 +5,12 @@ import tornadofx.App
 import tornadofx.UIComponent
 import view.EditorWindow
 import view.StackupEditorView
+import tornadofx.*
+import java.io.File
 
 class Application : App(EditorWindow::class) {
 
+    val editorController: EditorController by inject()
 
     override fun start(stage: Stage) {
         super.start(stage)
@@ -16,6 +19,6 @@ class Application : App(EditorWindow::class) {
         stage.height = 600.0
         stage.centerOnScreen()
 
-
+        editorController.loadPCBFromAltiumFile(File("PCB1.PcbDoc"))
     }
 }

@@ -66,9 +66,8 @@ class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
         val holeSize = via.holeRadius * 2
         gc.fill = Color.SILVER
         gc.fillOval(x1, y1, diameter, diameter)
-        gc.fill = Color.CHOCOLATE
+        gc.fill = Color.gray(0.1)
         gc.fillOval(x2, y2, holeSize, holeSize)
-
 
         via.net?.let {
             gc.lineWidth = 1.0
