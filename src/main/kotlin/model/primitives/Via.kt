@@ -5,8 +5,13 @@ import model.geom.Box
 import model.geom.minus
 import model.geom.plus
 import model.nets.Net
+import model.pcb.AbstractLayer
 
-class Via(override var center: Point, var radius: Double, var holeRadius: Double, net: Net? = null) : Primitive(net) {
+class Via(layer: AbstractLayer,
+          override var center: Point,
+          var radius: Double,
+          var holeRadius: Double,
+          net: Net? = null) : Primitive(layer, net) {
 
     override fun accept(visitor: PrimitiveVisitor) {
         visitor.visitVia(this)

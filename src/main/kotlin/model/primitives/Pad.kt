@@ -2,26 +2,31 @@ package model.primitives
 
 import model.geom.Point
 import model.geom.Box
+import model.geom.div
+import model.geom.sumByPoint
+import model.nets.Net
+import model.pcb.AbstractLayer
 
-class Pad(val basePrimitives: List<Primitive>) : Primitive() {
+class Pad(val basePrimitives: List<Primitive>,
+        val name: String,
+        override var rotation: Double,
+        net: Net? = null) : Primitive(AbstractLayer.MULTIPLE_LAYERS, net) {
 
     override var center: Point
-        get() = TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        get() {
+            val centerOfMass = basePrimitives.sumByPoint { it.center } / basePrimitives.size
+            return centerOfMass
+        }
         set(value) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.}
         }
-
-    override var rotation: Double
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-        set(value) {}
 
     override fun accept(visitor: PrimitiveVisitor) {
         visitor.visitPad(this)
     }
 
     override fun isPointInside(point: Point): Boolean {
-
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return basePrimitives.fold(false, { acc, it -> acc || it.isPointInside(point)})
     }
 
 

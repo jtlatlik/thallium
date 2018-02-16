@@ -101,6 +101,8 @@ class SelectionTool(editor: PCBEditor) : Tool(editor) {
 
     override val onMouseMoved = EventHandler<MouseEvent> {
         val location = viewport.inverseTransform(Point(it.x, it.y))
+
+
         editor.scene.cursor = Cursor.DEFAULT
         if (!selection.isEmpty()) {
             selection.keys.forEach {

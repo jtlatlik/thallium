@@ -1,8 +1,10 @@
 package model.primitives
 
 import model.geom.*
+import model.pcb.AbstractLayer
 
-data class Polygon(val vertices: MutableList<Point>) : Primitive() {
+class Polygon(layer: AbstractLayer,
+        val vertices: MutableList<Point>) : Primitive(layer) {
 
     override var rotation: Double
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.

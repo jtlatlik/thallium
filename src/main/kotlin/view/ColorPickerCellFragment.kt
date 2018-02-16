@@ -1,9 +1,8 @@
 package view
 
-import javafx.event.EventType
 import javafx.scene.paint.Color
-import model.Layer
-import model.LayerType
+import model.pcb.Layer
+import model.pcb.LayerType
 import tornadofx.*
 
 class ColorPickerCellFragment : TableCellFragment<Layer, Color>() {

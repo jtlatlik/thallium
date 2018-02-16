@@ -5,8 +5,12 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
 import javafx.scene.shape.StrokeLineCap
 import javafx.scene.shape.StrokeLineJoin
+import javafx.scene.text.Font
 import javafx.scene.text.TextAlignment
 import model.geom.Point
+import model.geom.div
+import model.geom.minus
+import model.geom.unaryMinus
 import model.primitives.*
 
 class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
@@ -54,7 +58,15 @@ class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
     }
 
     override fun visitPad(pad: Pad) {
+        gc.save()
+        gc.translate(pad.center.x, pad.center.y)
+        gc.rotate(pad.rotation)
+        gc.translate(-pad.center.x, -pad.center.y)
 
+        pad.basePrimitives.forEach {
+            it.accept(this)
+        }
+        gc.restore()
 
     }
 
@@ -90,16 +102,28 @@ class PrimitivePainter(val gc: GraphicsContext) : PrimitiveVisitor {
         gc.translate(hole.center.x, hole.center.y)
         gc.rotate(hole.rotation)
 
-        val pos = Point( - hole.radius - hole.length / 2,- hole.radius)
-        val size = Point(hole.radius * 2 + hole.length,hole.radius * 2)
-        val arcSize = Point(hole.radius * 2 * hole.type.cornerRadius,hole.radius * 2 * hole.type.cornerRadius)
+        val pos = Point(-hole.radius - hole.length / 2, -hole.radius)
+        val size = Point(hole.radius * 2 + hole.length, hole.radius * 2)
+        val arcSize = Point(hole.radius * 2 * hole.type.cornerRadius, hole.radius * 2 * hole.type.cornerRadius)
 
         gc.fillRoundRect(pos.x, pos.y, size.x, size.y, arcSize.x, arcSize.y)
         gc.restore()
     }
 
     override fun visitRectangle(rect: Rectangle) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+        val p1 = -rect.size / 2
+        val arcSize = rect.cornerRadius * minOf(rect.size.x, rect.size.y)
+
+        if(rect.rotation != 0.0) {
+            gc.save()
+            gc.translate(rect.center.x, rect.center.y)
+            gc.rotate(rect.rotation)
+            gc.fillRoundRect(p1.x, p1.y, rect.size.x, rect.size.y, arcSize, arcSize)
+            gc.restore()
+        } else {
+            gc.fillRoundRect(rect.center.x + p1.x,  rect.center.y + p1.y, rect.size.x, rect.size.y, arcSize, arcSize)
+        }
     }
 
 }

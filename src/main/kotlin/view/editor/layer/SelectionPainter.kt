@@ -12,7 +12,7 @@ class SelectionPainter(val gc: GraphicsContext) : PrimitiveVisitor {
 
     init {
         gc.stroke = Color.WHITE
-        gc.fill = Color.web("rgba(73, 72, 62,0.5)")
+        gc.fill = Color.web("rgba(96, 96, 96,0.5)")
 
         //gc.setLineDashes(0.02, 0.01)
     }
@@ -49,7 +49,9 @@ class SelectionPainter(val gc: GraphicsContext) : PrimitiveVisitor {
     }
 
     override fun visitPad(pad: Pad) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        pad.basePrimitives.forEach {
+            it.accept(this)
+        }
     }
 
     override fun visitVia(via: Via) {
@@ -76,7 +78,9 @@ class SelectionPainter(val gc: GraphicsContext) : PrimitiveVisitor {
 
 
     override fun visitRectangle(rect: Rectangle) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val bb = rect.getBoundingBox()
+        gc.fillRect(bb.p1.x, bb.p1.y, bb.width, bb.height)
+        gc.strokeRect(bb.p1.x, bb.p1.y, bb.width, bb.height)
     }
 
 

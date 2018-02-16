@@ -7,8 +7,8 @@ import model.geom.div
 class QuadTree<T : Bounded>(val bounds: Box, val maxObjectsPerLevel: Int = DEFAULT_MAX_OBJECTS_PER_LEVEL, val maxDepth: Int = DEFAULT_MAX_DEPTH, val level: Int = 0) : MutableCollection<T> {
 
     companion object {
-        const val DEFAULT_MAX_OBJECTS_PER_LEVEL = 32
-        const val DEFAULT_MAX_DEPTH = 7
+        const val DEFAULT_MAX_OBJECTS_PER_LEVEL = 256
+        const val DEFAULT_MAX_DEPTH = 4
     }
 
     private var childNodes: Array<QuadTree<T>>? = null
@@ -119,7 +119,7 @@ class QuadTree<T : Bounded>(val bounds: Box, val maxObjectsPerLevel: Int = DEFAU
             }
 
             override fun remove() {
-                for (i in 3..0) {
+                for (i in 3 downTo 0) {
                     if (childIteratorsAccessed[i]) {
                         childIterators?.get(i)?.remove()
                         return
@@ -142,7 +142,7 @@ class QuadTree<T : Bounded>(val bounds: Box, val maxObjectsPerLevel: Int = DEFAU
      */
     fun retrieve(rect: Box): List<T> {
 
-        val returnList = arrayListOf<T>()
+        val returnList = mutableListOf<T>()
 
         //all objects of this node can potentially collide with this rectangle
         returnList.addAll(objects)

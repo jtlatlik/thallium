@@ -9,6 +9,4 @@ interface PrimitiveVisitor {
     fun visitRectangle(rect: Rectangle)
     fun visitHole(hole: Hole)
 
-
-
 }

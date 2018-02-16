@@ -1,11 +1,16 @@
 package view
 
+import com.sun.media.sound.InvalidFormatException
 import controller.EditorController
 import javafx.event.EventHandler
 import javafx.scene.input.KeyCombination
+import javafx.stage.FileChooser
 import javafx.stage.StageStyle
+import model.pcb.importers.AltiumImporter
+import model.pcb.importers.Importer
 import tornadofx.*
 import view.editor.PCBEditor
+import java.io.File
 
 class EditorWindow : View("Thallium") {
 
@@ -25,6 +30,32 @@ class EditorWindow : View("Thallium") {
                 }
                 item("_Open", "Ctrl+O")
                 item("_Save", "Ctrl+S")
+                separator()
+                menu("_Import") {
+                    val importers: List<Importer> = listOf(AltiumImporter)
+
+                    importers.forEach {
+                        item(it.name)
+                        action {
+                            val fc = FileChooser()
+                            fc.title = "Import ${it.name}"
+                            val file: File? = fc.showOpenDialog(null)
+
+                            file?.let {f ->
+                                try {
+                                    editorController.pcb = it.load(f)
+                                    editorController.editorWindow.editor.setPCB(editorController.pcb!!)
+                                    editorController.editorWindow.editor.fitView()
+                                } catch (e: InvalidFormatException) {
+                                    println("Error")
+                                    throw e
+                                }
+                            }
+
+                        }
+                    }
+                }
+                separator()
                 item("Quit")
             }
             menu("_Edit") {

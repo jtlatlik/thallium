@@ -4,6 +4,7 @@ import model.geom.Bounded
 import model.geom.Point
 import model.geom.Box
 import model.nets.Net
+import model.pcb.AbstractLayer
 
 /**
  * Abstract base class for all primitives on a PCB. This class defines common functions and properties for all derived
@@ -11,7 +12,7 @@ import model.nets.Net
  *
  * @property net The net which this primitive belongs to
  */
-abstract class Primitive(var net: Net? = null) : Bounded {
+abstract class Primitive(val layer: AbstractLayer, var net: Net? = null) : Bounded {
 
     /**
      * @property center the point which represents the primitive's center. The center is used, for instance, as a

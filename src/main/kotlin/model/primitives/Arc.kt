@@ -4,8 +4,16 @@ import model.geom.Box
 import model.geom.Point
 import model.geom.plus
 import model.geom.times
+import model.nets.Net
+import model.pcb.AbstractLayer
 
-class Arc(override var center: Point, var radius: Double, var startAngle: Double, var endAngle: Double, var width: Double = 0.0) : Primitive() {
+class Arc(layer: AbstractLayer,
+          override var center: Point,
+          var radius: Double,
+          var startAngle: Double,
+          var endAngle: Double,
+          var width: Double = 0.0,
+          net: Net? = null) : Primitive(layer, net) {
 
     val start: Point
         get() {

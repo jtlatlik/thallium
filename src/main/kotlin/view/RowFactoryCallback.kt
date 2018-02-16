@@ -6,14 +6,8 @@ import javafx.scene.control.TableView
 import javafx.scene.input.ClipboardContent
 import javafx.scene.input.TransferMode
 import javafx.util.Callback
-import model.Layer
+import model.pcb.Layer
 import javafx.scene.input.DataFormat
-import javafx.scene.input.KeyCode
-import javafx.scene.paint.Color
-import tornadofx.box
-import tornadofx.moveAt
-import tornadofx.setContent
-import tornadofx.style
 
 
 class RowFactoryCallback : Callback<TableView<Layer>, TableRow<Layer>> {

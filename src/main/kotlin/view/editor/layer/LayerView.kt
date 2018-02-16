@@ -1,10 +1,12 @@
 package view.editor.layer
 
 import javafx.scene.canvas.Canvas
+import javafx.scene.effect.BlurType
+import javafx.scene.effect.Shadow
 import javafx.scene.paint.Color
 import javafx.scene.shape.ArcType
-import model.LayerType
-import model.PCB
+import model.pcb.LayerType
+import model.pcb.PCB
 import model.geom.*
 import model.primitives.Arc
 import model.primitives.Line
@@ -64,15 +66,10 @@ class LayerView(val editor: PCBEditor) : Canvas() {
                         //painter.drawBoundingRectangle(it)
 
                         ++drawn
+
+
                     }
                 }
-                gc.fill = Color.WHITE
-                gc.beginPath()
-                gc.moveTo(2.0,2.0)
-                //gc.lineTo(2.0,4.0)
-                gc.arc(4.0,4.0,2.0,2.0,90.0,-90.0)
-                gc.closePath()
-                gc.fill()
             }
 
 
@@ -83,7 +80,7 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             ++drawn
         }
 
-        //println("layerview redraw. primitives: $drawn. time: ${time.toDouble() / 1000} µs")
+        println("layerview redraw. primitives: $drawn. time: ${time.toDouble() / 1000} µs")
 
     }
 
@@ -129,31 +126,60 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             gc.fill()
             gc.stroke()
         }
+
     }
 
     private fun drawGrid(grid: Grid) {
-
+        gc.save()
         gc.lineWidth = 0.5 / editor.viewport.getScale().x
-        gc.stroke = grid.fineColor
+        gc.fill = grid.fineColor
 
+        gc.translate(grid.origin.x, grid.origin.y)
         when (grid) {
             is CartesianGrid -> {
-                val (minX, minY) = Point(grid.origin.x, grid.origin.y)
-                val (maxX, maxY) = Point(minX + grid.width, minY + grid.height)
+                if(grid.rotation != 0.0)
+                    gc.rotate(grid.rotation)
+                val (minX, minY) = Point(0.0, 0.0)
+                val (maxX, maxY) = Point(grid.width, grid.height)
+
 
                 var p = Point(minX, minY)
 
-                while (p.y <= maxY) {
-                    if (grid.step.y >= 5 * gc.lineWidth) {
-                        gc.strokeLine(minX, p.y, maxX, p.y)
+                if (!grid.dotted) {
+                    var coarse = 0
+                    while (p.y <= maxY) {
+                        val isCoarse = coarse % grid.multiplier == 0
+
+                        if (grid.step.y >= 8 * gc.lineWidth) {
+                            gc.stroke = if (isCoarse) grid.coarseColor else grid.fineColor
+                            gc.strokeLine(minX, p.y, maxX, p.y)
+                        }
+                        ++coarse
+                        p.y += grid.step.y
                     }
-                    p.y += grid.step.y
-                }
-                while (p.x <= maxX) {
-                    if (grid.step.x >= 5 * gc.lineWidth) {
-                        gc.strokeLine(p.x, minY, p.x, maxY)
+                    coarse = 0
+                    while (p.x <= maxX) {
+
+                        val isCoarse = coarse % grid.multiplier == 0
+
+                        if (grid.step.x >= 8* gc.lineWidth) {
+                            gc.stroke = if (isCoarse) grid.coarseColor else grid.fineColor
+                            gc.strokeLine(p.x, minY, p.x, maxY)
+                        }
+                        ++coarse
+                        p.x += grid.step.x
                     }
-                    p.x += grid.step.x
+                } else {
+                    while (p.y <= maxY) {
+                        p.x = minX
+                        while (p.x <= maxX) {
+                            p.x += grid.step.x
+                            if (grid.step.x >= 5 * gc.lineWidth) {
+                                gc.fillRect(p.x - gc.lineWidth, p.y - gc.lineWidth, gc.lineWidth * 2, gc.lineWidth * 2)
+                            }
+                        }
+                        p.y += grid.step.y
+                    }
                 }
             }
             is PolarGrid -> {
@@ -179,7 +205,7 @@ class LayerView(val editor: PCBEditor) : Canvas() {
             }
         }
 
-
+        gc.restore()
     }
 
 

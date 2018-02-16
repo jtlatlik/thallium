@@ -2,6 +2,7 @@ package model.primitives
 
 import com.sun.javafx.geom.transform.Affine2D
 import model.geom.*
+import model.pcb.AbstractLayer
 
 /**
  * This represents a hole through the whole PCB. Usually, this is not used directly, but rather as a base primitive
@@ -15,8 +16,13 @@ import model.geom.*
  * @property plated whether to hole is plated or not
  *
  */
-class Hole(override var center: Point, var type: HoleType, var radius: Double, var length: Double, override var rotation: Double,
-           plated: Boolean = true) : Primitive() {
+class Hole(layer: AbstractLayer,
+           override var center: Point,
+           var type: HoleType,
+           var radius: Double,
+           var length: Double,
+           override var rotation: Double,
+           plated: Boolean = true) : Primitive(layer) {
 
     enum class HoleType(val cornerRadius: Double) {
         ROUND(1.0), RECTANGLE(0.0), SLOT(1.0)

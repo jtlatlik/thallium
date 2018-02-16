@@ -1,9 +1,11 @@
 package view.editor
 
 import javafx.event.EventHandler
+import javafx.event.EventType
 import javafx.scene.input.DataFormat
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.StackPane
-import model.PCB
+import model.pcb.PCB
 import model.geom.*
 import tornadofx.add
 import view.editor.layer.LayerView
@@ -19,7 +21,7 @@ class PCBEditor : StackPane() {
     val toolStack = Stack<Tool>()
 
     var activeTool: Tool = SelectionTool(this)
-        set(tool: Tool) {
+        set(tool) {
             tool.refreshEventHandlers()
         }
 
@@ -27,6 +29,8 @@ class PCBEditor : StackPane() {
 
     val layerView = LayerView(this)
     val toolView = ToolView(this)
+
+    var crosshair = Point(0.0, 0.0)
 
     init {
 
@@ -39,6 +43,15 @@ class PCBEditor : StackPane() {
 
         add(layerView)
         add(toolView)
+
+        addEventHandler(MouseEvent.MOUSE_MOVED) {
+
+            val location = viewport.inverseTransform(Point(it.x, it.y))
+            pcb?.let {
+                crosshair = it.grids.first().snap(location) - it.origin
+                toolView.redraw()
+            }
+        }
 
         onMouseEntered = EventHandler {
             toolView.setCrosshairVisibility(true)
@@ -84,11 +97,11 @@ class PCBEditor : StackPane() {
 
             if (arPCB > arViewPort) {
                 val scale = width / (p2 - p1).x
-                val pan =-p1 * scale + Point(0.0, (height - (it.size.y + padding.y*2)* scale) / 2)
+                val pan = -p1 * scale + Point(0.0, (height - (it.size.y + padding.y * 2) * scale) / 2)
                 viewport.setScalePan(scale, pan)
             } else {
                 val scale = height / (p2 - p1).y
-                val pan = -p1 * scale + Point((width - (it.size.x + padding.x*2 )* scale) / 2, 0.0)
+                val pan = -p1 * scale + Point((width - (it.size.x + padding.x * 2) * scale) / 2, 0.0)
                 viewport.setScalePan(scale, pan)
             }
         }
@@ -104,7 +117,4 @@ class PCBEditor : StackPane() {
         refresh()
     }
 
-    companion object {
-        val altiumDataFormat = DataFormat("Protel-PCB") //register altium clipboard data format
-    }
 }

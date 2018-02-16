@@ -12,8 +12,8 @@ import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.Priority
-import model.Layer
-import model.LayerType
+import model.pcb.Layer
+import model.pcb.LayerType
 import tornadofx.*
 
 class StackupEditorView : View("Stackup Editor") {

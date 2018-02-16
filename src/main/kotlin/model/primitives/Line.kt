@@ -2,9 +2,13 @@ package model.primitives
 
 import model.geom.*
 import model.nets.Net
+import model.pcb.AbstractLayer
 
-
-class Line(var start: Point, var end: Point, var width: Double = 0.0, net: Net? = null) : Primitive(net) {
+class Line(layer: AbstractLayer,
+           var start: Point,
+           var end: Point,
+           var width: Double = 0.0,
+           net: Net? = null) : Primitive(layer, net) {
 
     override var center: Point
         get() = (start + end) * 0.5
